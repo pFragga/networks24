@@ -1,7 +1,12 @@
-import java.io.*;
-import java.net.*;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.IOException;
+import java.lang.ClassNotFoundException;
+import java.lang.InterruptedException;
+import java.lang.Thread;
+import java.net.Socket;
 
-class TrackerThread extends Thread {
+public class TrackerThread extends Thread {
 	private static int id = 1;
 	private Socket csocket;
 

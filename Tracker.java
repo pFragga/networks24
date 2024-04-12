@@ -1,7 +1,12 @@
-import java.io.*;
-import java.net.*;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
 
-class Tracker {
+public class Tracker {
 	/*
 	 * Create the file that holds our users (initially empty).
 	 */

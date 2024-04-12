@@ -1,8 +1,11 @@
-import java.io.*;
-import java.net.*;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.lang.ClassNotFoundException;
+import java.net.Socket;
 import java.util.Scanner;
 
-class Peer {
+public class Peer {
 	private static final Scanner stdin = new Scanner(System.in);
 
 	/*

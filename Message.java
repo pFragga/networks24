@@ -1,6 +1,6 @@
 import java.io.Serializable;
 
-class Message implements Serializable {
+public class Message implements Serializable {
 	int type = 1; // default value: 1
 	String secret;
 
