@@ -15,7 +15,9 @@ public class Peer {
 	 * Use this, whenever the user inputs something invalid/incorrect.
 	 */
 	private static void showUsage() {
-		System.out.println("usage: blah blah blah..."); // TODO
+		System.out.print(
+				"[c]\tconnect to tracker/peer\n\n" +
+				"[h]\thelp\n[q]\tquit\n");
 	}
 
 	private static void connect(String ipaddr, int port) {

@@ -5,27 +5,23 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
 
 public class Tracker {
-	/*
-	 * Create the file that holds our users (initially empty).
-	 */
-	public static void init_db() throws IOException {
-		BufferedWriter writer =
-			new BufferedWriter(new FileWriter("users.db"));
-		writer.write(100);
-		writer.close();
+	/* active users are always a subset of registered users */
+	private ArrayList<User> activeUsers = new ArrayList<>();
+	private ArrayList<User> registeredUsers = new ArrayList<>();
+
+	private void register() {
 	}
 
+	private void login() {
+	}
+
+	private void logout() {
+	}
 
 	public static void main(String[] args) {
-		try {
-			init_db(); // TODO
-		} catch (IOException e) {
-			System.err.println("Could not write database file.");
-			System.exit(1);
-		}
-
 		int port = 9090;
 		boolean listening = true;
 		try {

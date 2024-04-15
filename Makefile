@@ -1,7 +1,7 @@
 JAVA = java -cp bin
 JAVAC = javac -d bin -cp .
 
-SRCS = Peer.java Tracker.java TrackerThread.java Message.java
+SRCS = Peer.java Tracker.java TrackerThread.java Message.java User.java
 CLASSES := $(SRCS:%.java=bin/%.class)
 
 all: $(CLASSES)
@@ -16,7 +16,7 @@ peer: bin/Peer.class
 	$(JAVA) Peer
 
 clean:
-	rm -f *.class users.db
+	rm -f *.class
 	rm -r bin
 
 .PHONY: all tracker peer clean
