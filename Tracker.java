@@ -1,38 +1,43 @@
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
+import java.net.ServerSocket;
 
-public class Tracker {
-	/* active users are always a subset of registered users */
-	private ArrayList<User> activeUsers = new ArrayList<>();
-	private ArrayList<User> registeredUsers = new ArrayList<>();
-
-	private void register() {
+public class Tracker implements ITracker {
+	@Override
+	public void register() {
 	}
 
-	private void login() {
+	@Override
+	public void login() {
 	}
 
-	private void logout() {
+	@Override
+	public void logout() {
+	}
+
+	@Override
+	public void respondToNotify() {
+	}
+
+	@Override
+	public void reply_list() {
+	}
+
+	@Override
+	public void reply_details() {
 	}
 
 	public static void main(String[] args) {
-		int port = 9090;
-		boolean listening = true;
 		try {
-			ServerSocket ssocket = new ServerSocket(port);
-			while (listening) {
-				Socket csocket = ssocket.accept();
-				new TrackerThread(csocket).start();
+			ServerSocket serverSocket = new ServerSocket(9090);
+			while (true) {
+				Socket clientSocket = serverSocket.accept();
+				new TrackerThread(clientSocket).start();
 			}
-		} catch (IOException e) {
-			System.err.println("Connection lost.");
-			System.exit(1);
+		} catch (Exception e) {
+			System.err.println("Error occurred. Aborting...");
+			e.printStackTrace();
 		}
 	}
 }

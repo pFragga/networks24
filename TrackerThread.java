@@ -1,50 +1,49 @@
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.IOException;
-import java.lang.ClassNotFoundException;
-import java.lang.InterruptedException;
 import java.lang.Thread;
 import java.net.Socket;
 
 public class TrackerThread extends Thread {
 	private static int id = 1;
-	private Socket csocket;
+	private Socket clientSocket;
 
-	public TrackerThread(Socket csocket) {
-		super("TrackerThread" + id++); // see: Thread.name
-		this.csocket = csocket;
+	public TrackerThread(Socket clientSocket) {
+		super("TrackerThread" + id++); // see: Tracker.name
+		this.clientSocket = clientSocket;
+	}
+
+	public static void greetUser(ObjectOutputStream out, Message message) {
+		try {
+			out.writeObject("Welcome, " + message.username + "!!");
+			out.flush();
+		} catch (Exception e) {
+			System.err.println("Could not welcome user. :(");
+		}
 	}
 
 	@Override
 	public void run() {
-		System.out.println("Thread '" + this.getName() + "' accepted a new connection: " + csocket.toString());
+		System.out.println("Thread '" + this.getName() + "' accepted a new connection: "
+				+ clientSocket.toString());
 		try {
+			// get Input and Output streams
 			ObjectOutputStream out = new
-				ObjectOutputStream(csocket.getOutputStream());
+				ObjectOutputStream(clientSocket.getOutputStream());
 			ObjectInputStream in = new
-				ObjectInputStream(csocket.getInputStream());
+				ObjectInputStream(clientSocket.getInputStream());
+
 			Message message = (Message) in.readObject();
-			Thread.sleep(2000); // pretend to be working hard lmao
-			switch (message.type) {
-			case 1:
-				out.writeObject("Secret: " + message.secret);
-				break;
-			case 2:
-				out.writeObject(csocket.getInetAddress().toString());
-				break;
-			default:
-				out.writeObject("Unknown message type.");
+			switch (message.msg_type) {
+				case 1:
+					greetUser(out, message);
+					break;
+				default:
 			}
-			out.flush();
-			csocket.close();
-		} catch (InterruptedException e) {
+			out.flush(); // ensure flushed output before closing
+			clientSocket.close();
+		} catch (Exception e) {
+			System.err.println("Error occurred. Aborting...");
 			e.printStackTrace();
-		} catch (ClassNotFoundException e) {
-			System.err.println("Received invalid data: Aborting.");
-			System.exit(1);
-		} catch (IOException e) {
-			System.err.println("I/O error: Aborting.");
-			System.exit(1);
 		}
 	}
 }

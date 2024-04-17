@@ -1,12 +1,12 @@
 JAVA = java -cp bin
 JAVAC = javac -d bin -cp .
 
-SRCS = Peer.java Tracker.java TrackerThread.java Message.java User.java
+SRCS = Peer.java Tracker.java TrackerThread.java Message.java
 CLASSES := $(SRCS:%.java=bin/%.class)
 
 all: $(CLASSES)
 
-bin/%.class: %.java
+bin/%.class: %.java I%.java
 	$(JAVAC) $^
 
 tracker: bin/Tracker.class
