@@ -31,6 +31,25 @@ public class Peer implements IPeer {
 
 	@Override
 	public void list() {
+		connect("localhost", 9090);
+		try {
+			// send request
+			Message message = new Message(10);
+			out.writeObject(message);
+			out.flush();
+
+			// handle response
+			Message reply = (Message) in.readObject();
+			ArrayList<String> availableFiles = reply.availableFiles;
+			System.out.println("Available files:\n================");
+			for (String filename: availableFiles) {
+				System.out.println(filename);
+			}
+		} catch (ClassNotFoundException e) {
+			System.err.println("Invalid message received. Aborting...");
+		} catch (IOException e) {
+			System.err.println("Connection error. Aborting...");
+		}
 	}
 
 	@Override

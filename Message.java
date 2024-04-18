@@ -1,9 +1,11 @@
 import java.io.Serializable;
+import java.util.ArrayList;
 
 /*
  * maybe make generic: <T>
  */
 public class Message implements Serializable {
+	ArrayList<String> availableFiles = null;
 	boolean peer_active = false; // checkActive()
 	boolean status = false; // success/failure
 	boolean toPeer = false;

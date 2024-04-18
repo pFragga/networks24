@@ -4,11 +4,12 @@ import java.io.ObjectOutputStream;
 import java.lang.Thread;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.List;
 
 public class TrackerThread implements ITracker, Runnable {
 	//List<User> registeredPeersInfo = new ArrayList<>();
 	//List<User> activePeersInfo = new ArrayList<>();
-	//List<String> allFilenames;
+	List<String> allFilenames;
 	//Map<String, Integer> filenamesToTokenIDs = null;
 	private static int id = 1;
 	private Socket clientSocket;
@@ -18,6 +19,7 @@ public class TrackerThread implements ITracker, Runnable {
 	public TrackerThread(Socket clientSocket) {
 		this.id++;
 		this.clientSocket = clientSocket;
+		this.allFilenames = new ArrayList<>();
 	}
 
 	@Override
@@ -38,6 +40,14 @@ public class TrackerThread implements ITracker, Runnable {
 
 	@Override
 	public void reply_list() {
+		Message message = new Message(10);
+		message.availableFiles = new ArrayList<>(allFilenames);
+		try {
+			out.writeObject(message);
+			out.flush();
+		} catch (IOException e) {
+			System.err.println("Could not send requested list. Aborting...");
+		}
 	}
 
 	@Override
