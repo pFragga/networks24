@@ -4,10 +4,31 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.lang.ClassNotFoundException;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Scanner;
 
 public class Peer implements IPeer {
+	private int id;
+	private String sharedDir;
+	private String fileDownloadList;
+	private ArrayList<File> sharedFiles;
+	private ObjectOutputStream out;
+	private ObjectInputStream in;
+	private static Scanner stdin;
+	private static boolean running;
+	private static Socket connection;
+
+	public Peer() {
+		this.id++;
+		this.sharedDir = "shared_directory_" + id; // FIXME
+		this.fileDownloadList = "fileDownloadList.txt";
+		this.sharedFiles = new ArrayList<>();
+		this.stdin = new Scanner(System.in);
+		this.running = true;
+	}
+
 	@Override
 	public void list() {
 	}
@@ -44,61 +65,90 @@ public class Peer implements IPeer {
 	public void logout() {
 	}
 
-	public static void main(String[] args) {
-		// TODO add scope to these variables
-		int id = 1;
-		String sharedDir = "shared_directory_" + id;
-		String fileDownloadList = "fileDownloadList.txt";
-		ArrayList<File> sharedFiles = new ArrayList<>();
+	private void showUsage() {
+		System.out.print(
+				"[r]\tregister\n" +
+				"[l]\tlogin\n" +
+				"[L]\tlogout without quiting\n\n" +
+				"[l]\tlist tracker's known files\n\n" +
+				"[h]\tshow usage\n" +
+				"[q]\tlogout and quit\n"
+				);
+	}
 
+	private void updateSharedFiles() {
 		// check which files from fileDownloadList we have
 		try {
+			System.out.print("Updating shared files... ");
 			BufferedReader reader = new BufferedReader(new FileReader(fileDownloadList));
 			String filename;
 			while ((filename = reader.readLine()) != null) {
 				File sharedFile = new File(sharedDir + "/" + filename);
-				if (sharedFile.exists()) {
+				if (sharedFile.exists() && !sharedFiles.contains(sharedFile)) {
 					sharedFiles.add(sharedFile);
 				}
 			}
-			// verification
-			if (!sharedFiles.isEmpty()) {
-				for (File shareFile: sharedFiles) {
-					System.out.println(shareFile);
-				}
-			} else {
-				System.out.println("No shared files in " + sharedDir);
-			}
+			//if (!sharedFiles.isEmpty()) {
+			//	for (File shareFile: sharedFiles) {
+			//		System.out.println(shareFile);
+			//	}
+			//}
+			System.out.println("OK.");
 		} catch (IOException e) {
 			System.err.println("Could not open " + fileDownloadList);
 		}
+	}
 
-		// establish a connection
+	private void connect(String ipaddr, int port) {
 		try {
-			// Connect to server
-			Socket connection = new Socket("localhost", 9090);
-
-			// get Input and Output streams
-			ObjectOutputStream out = new
-				ObjectOutputStream(connection.getOutputStream());
-			ObjectInputStream in = new
-				ObjectInputStream(connection.getInputStream());
-
-			//send message get it back and print it
-			Message message = new Message(1);
-			message.username = "george";
-			message.password = "stamoulis";
-			out.writeObject(message);
-			out.flush();
-
-			// 'reply' was previously 'message'
-			String reply = (String) in.readObject();
-			System.out.println(reply);
-
-			connection.close();
-		} catch (Exception e) {
-			System.err.println("Error occurred.");
-			e.printStackTrace();
+			connection = new Socket(ipaddr, port);
+			out = new ObjectOutputStream(connection.getOutputStream());
+			in = new ObjectInputStream(connection.getInputStream());
+		} catch (IOException e) {
+			System.err.println("Connection error. Aborting...");
 		}
+	}
+
+	private void disconnect() {
+		try {
+			if (connection != null && !connection.isClosed()) {
+				connection.close();
+			}
+		} catch (IOException e) {
+			System.err.println("Connection error. Aborting...");
+		}
+	}
+
+	public static void main(String[] args) {
+		System.out.println("Welcome to our simple P2P file sharing system!");
+		Peer peer = new Peer();
+		peer.updateSharedFiles();
+		while (running) {
+			System.out.print("(h for help)> ");
+			String input = stdin.next();
+			switch (input) {
+				case "l":
+					peer.list();
+					break;
+				case "r":
+					peer.register();
+					break;
+
+				/* TODO: add more here */
+
+				case "h":
+					peer.showUsage();
+					break;
+				case "q":
+					peer.disconnect();
+					running = false;
+					break;
+				default:
+					peer.showUsage();
+			}
+		}
+
+		stdin.close();
+		peer.disconnect(); // just in case...
 	}
 }
