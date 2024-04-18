@@ -4,6 +4,16 @@ import java.io.Serializable;
  * maybe make generic: <T>
  */
 public class Message implements Serializable {
+	boolean peer_active = false; // checkActive()
+	boolean status = false; // success/failure
+	boolean toPeer = false;
+	int msg_type;
+	int port = 0;
+	String ipaddr = "";
+	String password = "";
+	String token_id = "";
+	String username = "";
+
 	/*
 	 * 1 => registration credentials (String username, String password)
 	 * 2 => login
@@ -12,16 +22,6 @@ public class Message implements Serializable {
 	 * 5 => request download
 	 * ...
 	 */
-	int msg_type;
-	boolean toPeer = false;
-	String username = "";
-	String password = "";
-	String token_id = "";
-	boolean status = false; // success/failure
-	String ipaddr = "";
-	int port = 0;
-	boolean peer_active = false; // checkActive()
-
 	Message(int msg_type) {
 		this.msg_type = msg_type;
 	}
