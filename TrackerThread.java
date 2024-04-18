@@ -12,19 +12,12 @@ public class TrackerThread implements ITracker, Runnable {
 	//Map<String, Integer> filenamesToTokenIDs = null;
 	private static int id = 1;
 	private Socket clientSocket;
+	private ObjectOutputStream out;
+	private ObjectInputStream in;
 
 	public TrackerThread(Socket clientSocket) {
 		this.id++;
 		this.clientSocket = clientSocket;
-	}
-
-	public static void greetUser(ObjectOutputStream out, Message message) {
-		try {
-			out.writeObject("Welcome, " + message.username + "!!");
-			out.flush();
-		} catch (Exception e) {
-			System.err.println("Could not welcome user. :(");
-		}
 	}
 
 	@Override
@@ -53,19 +46,25 @@ public class TrackerThread implements ITracker, Runnable {
 
 	@Override
 	public void run() {
-		System.out.println("Thread '" + this.getName() + "' accepted a new connection: "
-				+ clientSocket.toString());
+		System.out.println("Accepted new connection: " + clientSocket);
 		try {
 			// get Input and Output streams
-			ObjectOutputStream out = new
-				ObjectOutputStream(clientSocket.getOutputStream());
-			ObjectInputStream in = new
-				ObjectInputStream(clientSocket.getInputStream());
+			out = new ObjectOutputStream(clientSocket.getOutputStream());
+			in = new ObjectInputStream(clientSocket.getInputStream());
 
 			Message message = (Message) in.readObject();
 			switch (message.msg_type) {
 				case 1:
-					greetUser(out, message);
+					register();
+					break;
+
+				/* TODO: add more functions here */
+
+				case 10:
+					reply_list();
+					break;
+				case 11:
+					reply_details();
 					break;
 				default:
 			}
