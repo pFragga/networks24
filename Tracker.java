@@ -1,43 +1,24 @@
+import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.net.Socket;
 import java.net.ServerSocket;
+import java.net.Socket;
 
-public class Tracker implements ITracker {
-	@Override
-	public void register() {
-	}
-
-	@Override
-	public void login() {
-	}
-
-	@Override
-	public void logout() {
-	}
-
-	@Override
-	public void respondToNotify() {
-	}
-
-	@Override
-	public void reply_list() {
-	}
-
-	@Override
-	public void reply_details() {
+public class Tracker {
+	private void listen(int port) {
+		try {
+			ServerSocket serverSocket = new ServerSocket(port);
+			while (true) {
+				Socket clientSocket = serverSocket.accept();
+				new Thread(new TrackerThread(clientSocket)).start();
+			}
+		} catch (IOException e) {
+			System.err.println("Connection aborted.");
+		}
 	}
 
 	public static void main(String[] args) {
-		try {
-			ServerSocket serverSocket = new ServerSocket(9090);
-			while (true) {
-				Socket clientSocket = serverSocket.accept();
-				new TrackerThread(clientSocket).start();
-			}
-		} catch (Exception e) {
-			System.err.println("Error occurred. Aborting...");
-			e.printStackTrace();
-		}
+		Tracker tracker = new Tracker();
+		tracker.listen(9090);
 	}
 }

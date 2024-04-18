@@ -1,14 +1,20 @@
+import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.Thread;
 import java.net.Socket;
+import java.util.ArrayList;
 
-public class TrackerThread extends Thread {
+public class TrackerThread implements ITracker, Runnable {
+	//List<User> registeredPeersInfo = new ArrayList<>();
+	//List<User> activePeersInfo = new ArrayList<>();
+	//List<String> allFilenames;
+	//Map<String, Integer> filenamesToTokenIDs = null;
 	private static int id = 1;
 	private Socket clientSocket;
 
 	public TrackerThread(Socket clientSocket) {
-		super("TrackerThread" + id++); // see: Tracker.name
+		this.id++;
 		this.clientSocket = clientSocket;
 	}
 
@@ -19,6 +25,30 @@ public class TrackerThread extends Thread {
 		} catch (Exception e) {
 			System.err.println("Could not welcome user. :(");
 		}
+	}
+
+	@Override
+	public void register() {
+	}
+
+	@Override
+	public void login() {
+	}
+
+	@Override
+	public void logout() {
+	}
+
+	@Override
+	public void respondToNotify() {
+	}
+
+	@Override
+	public void reply_list() {
+	}
+
+	@Override
+	public void reply_details() {
 	}
 
 	@Override
@@ -41,9 +71,10 @@ public class TrackerThread extends Thread {
 			}
 			out.flush(); // ensure flushed output before closing
 			clientSocket.close();
-		} catch (Exception e) {
-			System.err.println("Error occurred. Aborting...");
-			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			System.err.println("Invalid message. Aborting...");
+		} catch (IOException e) {
+			System.err.println("Connection error. Aborting...");
 		}
 	}
 }
