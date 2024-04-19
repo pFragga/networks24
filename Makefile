@@ -1,22 +1,24 @@
-JAVA = java -cp bin
-JAVAC = javac -d bin -cp .
+JAVAC = javac
+JFLAGS = -g -d bin -cp .
 
-SRCS = Peer.java Tracker.java TrackerThread.java Message.java
-CLASSES := $(SRCS:%.java=bin/%.class)
+CLASSES = \
+		  IPeer.java \
+		  ITracker.java \
+		  Message.java \
+		  Peer.java \
+		  Tracker.java \
+		  TrackerThread.java \
+		  User.java \
 
-all: $(CLASSES)
 
-bin/%.class: %.java I%.java
-	$(JAVAC) $^
+all: classes
 
-tracker: bin/Tracker.class
-	$(JAVA) Tracker
+classes: $(CLASSES:%.java=bin/%.class)
 
-peer: bin/Peer.class
-	$(JAVA) Peer
+bin/%.class: %.java
+	$(JAVAC) $(JFLAGS) $*.java
 
 clean:
 	rm -f *.class
-	rm -r bin
 
-.PHONY: all tracker peer clean
+.PHONY: all clean
