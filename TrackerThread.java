@@ -5,6 +5,7 @@ import java.lang.Thread;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class TrackerThread implements ITracker, Runnable {
 	//List<User> registeredPeersInfo = new ArrayList<>();
@@ -15,7 +16,8 @@ public class TrackerThread implements ITracker, Runnable {
 	private Socket clientSocket;
 	private ObjectOutputStream out;
 	private ObjectInputStream in;
-
+	private ConcurrentHashMap<String, Integer> countDownloads = new ConcurrentHashMap<>();
+	private ConcurrentHashMap<String, Integer> countFailures = new ConcurrentHashMap<>();
 	public TrackerThread(Socket clientSocket) {
 		this.id++;
 		this.clientSocket = clientSocket;
@@ -35,7 +37,18 @@ public class TrackerThread implements ITracker, Runnable {
 	}
 
 	@Override
-	public void respondToNotify() {
+	public synchronized void respondToNotify(String userName, boolean isSuccess) {
+		if (isSuccess) {
+			// Update count_downloads
+			countDownloads.merge(userName, 1, Integer::sum);
+			// Inform about successful download
+			System.out.println("Successfully downloaded by: " + userName);
+		} else {
+			// Update count_failures
+			countFailures.merge(userName, 1, Integer::sum);
+			// Inform about download failure
+			System.out.println("Download failed for: " + userName);
+		}
 	}
 
 	@Override
