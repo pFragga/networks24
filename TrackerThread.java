@@ -4,13 +4,15 @@ import java.io.ObjectOutputStream;
 import java.lang.Thread;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class TrackerThread implements ITracker, Runnable {
 	//List<User> registeredPeersInfo = new ArrayList<>();
-	//List<User> activePeersInfo = new ArrayList<>();
-	//Map<String, Integer> filenamesToTokenIDs = null;
+	private static Map<Integer, User> activePeers;
 	private static List<String> allFilenames;
+	private static Map<String, List<Integer>> filenamesToTokenIDs;
 	private static int id = 1;
 	private Socket clientSocket;
 	private ObjectOutputStream out;
@@ -20,6 +22,8 @@ public class TrackerThread implements ITracker, Runnable {
 		id++;
 		this.clientSocket = clientSocket;
 		allFilenames = new ArrayList<>();
+		filenamesToTokenIDs = new HashMap<>();
+		activePeers = new HashMap<>();
 	}
 
 	@Override
@@ -51,8 +55,66 @@ public class TrackerThread implements ITracker, Runnable {
 		}
 	}
 
+	/**
+	 * Show info for all users that provide the file with given name.
+	 *
+	 * First, locate which tokenID(s) correspond to the provided filename.
+	 * Then, for each tokenID, if the user holding it is active, we send the
+	 * needed details to the client.
+	 */
 	@Override
-	public void reply_details() {
+	public void reply_details(String filename) {
+		Message message = new Message(11);
+		List<Integer> tokenIDs = filenamesToTokenIDs.get(filename);
+		if ((message.status = tokenIDs != null && !tokenIDs.isEmpty())) {
+			message.providersForReqFile = new ArrayList<>();
+			for (Integer tokenID : tokenIDs) {
+				User currUser = activePeers.get(tokenID);
+				if (checkActive(currUser.getAddr(), currUser.getPort()))
+					/*
+					 * FIXME
+					 * Don't send the entire User class, the passwords are also
+					 * stored there!!!
+					 */
+					message.providersForReqFile.add(currUser);
+			}
+		}
+		try {
+			out.writeObject(message);
+			out.flush();
+		} catch (IOException e) {
+			System.err.println("Could not send details. Aborting...");
+		}
+	}
+
+	@Override
+	public boolean checkActive(String ipAddr, int port) {
+		try {
+				Socket newSocket = new Socket(ipAddr, port);
+				ObjectOutputStream newOut = new ObjectOutputStream(newSocket.getOutputStream());
+				ObjectInputStream newIn = new ObjectInputStream(newSocket.getInputStream());
+				Message message = new Message(12);
+				newOut.writeObject(message);
+				newOut.flush();
+				Message reply = (Message) newIn.readObject();
+				if (reply.status)
+						return reply.peer_active;
+		} catch (ClassNotFoundException e) {
+				System.err.println("Invalid message. Aborting...");
+		} catch (IOException e) {
+				System.err.println("Connection error. Aborting...");
+				return false;
+		}
+		return false;
+	}
+
+	private void closeClientSocket() {
+		try {
+			if (clientSocket != null && !clientSocket.isClosed())
+				clientSocket.close();
+		} catch (IOException e) {
+			System.err.println("Connection error. Aborting...");
+		}
 	}
 
 	@Override
@@ -81,16 +143,18 @@ public class TrackerThread implements ITracker, Runnable {
 					reply_list();
 					break;
 				case 11:
-					reply_details();
+					reply_details(message.requestedFileName);
 					break;
 				default:
 			}
 			out.flush(); // ensure flushed output before closing
-			clientSocket.close();
+			closeClientSocket();
 		} catch (ClassNotFoundException e) {
 			System.err.println("Invalid message. Aborting...");
+			closeClientSocket();
 		} catch (IOException e) {
 			System.err.println("Connection error. Aborting...");
+			closeClientSocket();
 		}
 	}
 }

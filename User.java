@@ -6,6 +6,9 @@ public class User {
 	private String password;
 	private int countDownloads;
 	private int countFailures;
+	private String ipAddr;
+	private int port;
+	private int tokenID;
 
 	// Constructor
 	public User(String username, String password) {
@@ -63,5 +66,18 @@ public class User {
 	public synchronized void resetCounts() {
 		this.countDownloads = 0;
 		this.countFailures = 0;
+	}
+
+	public String getAddr() {
+			return this.ipAddr;
+	}
+
+	public int getPort() {
+			return this.port;
+	}
+
+	@Override
+	public String toString() {
+		return tokenID + " (" + username + ") => " + ipAddr + ":" + port;
 	}
 }

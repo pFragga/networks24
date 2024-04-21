@@ -55,8 +55,37 @@ public class Peer implements IPeer {
 		}
 	}
 
+	/**
+	 * Request details for a specific file that the tracker knows about.
+	 *
+	 * If the tracker successfully finds at least one peer that hold  that
+	 * file, we receive a list of information about that specific peer.
+	 */
 	@Override
 	public void details() {
+		System.out.print("Which file do you want details for?> ");
+		String filename = stdin.next();
+		try {
+			connect("localhost", 9090);
+			Message message = new Message(11);
+			message.requestedFileName = filename;
+			out.writeObject(message);
+			out.flush();
+
+			Message reply = (Message) in.readObject();
+			if (reply.status) {
+				System.out.println("Peer(s) found:\n==============");
+				for (User provider : reply.providersForReqFile) {
+					System.out.println(provider); // calls User.toString()
+				}
+			} else {
+				System.out.println("No peer(s) for " + filename);
+			}
+		} catch (ClassNotFoundException e) {
+			System.err.println("Invalid message received. Aborting...");
+		} catch (IOException e) {
+			System.err.println("Connection error. Aborting...");
+		}
 	}
 
 	@Override

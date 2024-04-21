@@ -17,6 +17,8 @@ public class Message implements Serializable {
 	String password = "";
 	String token_id = "";
 	String username = "";
+	String requestedFileName = "";
+	ArrayList<User> providersForReqFile = null;
 
 	/*
 	 * 1 => registration credentials (String username, String password)

@@ -4,5 +4,6 @@ public interface ITracker {
 	public void logout();
 	public void respondToNotify();
 	public void reply_list();
-	public void reply_details();
+	public void reply_details(String filename);
+	public boolean checkActive(String ipAddr, int port);
 }
