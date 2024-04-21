@@ -1,14 +1,14 @@
 JAVAC = javac
-JFLAGS = -g -d bin -cp .
+JFLAGS = -g -Xlint:all -d bin -cp .
 
 CLASSES = \
-		  IPeer.java \
-		  ITracker.java \
-		  Message.java \
-		  Peer.java \
-		  Tracker.java \
-		  TrackerThread.java \
-		  User.java \
+	  IPeer.java \
+	  ITracker.java \
+	  Message.java \
+	  Peer.java \
+	  Tracker.java \
+	  TrackerThread.java \
+	  User.java \
 
 
 all: classes
@@ -20,5 +20,6 @@ bin/%.class: %.java
 
 clean:
 	rm -f *.class
+	rm -r bin
 
 .PHONY: all clean
