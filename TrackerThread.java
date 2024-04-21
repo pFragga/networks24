@@ -4,6 +4,7 @@ import java.io.ObjectOutputStream;
 import java.lang.Thread;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,7 +18,8 @@ public class TrackerThread implements ITracker, Runnable {
 	private Socket clientSocket;
 	private ObjectOutputStream out;
 	private ObjectInputStream in;
-
+	private ConcurrentHashMap<String, Integer> countDownloads = new ConcurrentHashMap<>();
+	private ConcurrentHashMap<String, Integer> countFailures = new ConcurrentHashMap<>();
 	public TrackerThread(Socket clientSocket) {
 		id++;
 		this.clientSocket = clientSocket;
@@ -39,7 +41,18 @@ public class TrackerThread implements ITracker, Runnable {
 	}
 
 	@Override
-	public void respondToNotify() {
+	public synchronized void respondToNotify(String userName, boolean isSuccess) {
+		if (isSuccess) {
+			// Update count_downloads
+			countDownloads.merge(userName, 1, Integer::sum);
+			// Inform about successful download
+			System.out.println("Successfully downloaded by: " + userName);
+		} else {
+			// Update count_failures
+			countFailures.merge(userName, 1, Integer::sum);
+			// Inform about download failure
+			System.out.println("Download failed for: " + userName);
+		}
 	}
 
 	@Override
@@ -90,20 +103,20 @@ public class TrackerThread implements ITracker, Runnable {
 	@Override
 	public boolean checkActive(String ipAddr, int port) {
 		try {
-				Socket newSocket = new Socket(ipAddr, port);
-				ObjectOutputStream newOut = new ObjectOutputStream(newSocket.getOutputStream());
-				ObjectInputStream newIn = new ObjectInputStream(newSocket.getInputStream());
-				Message message = new Message(12);
-				newOut.writeObject(message);
-				newOut.flush();
-				Message reply = (Message) newIn.readObject();
-				if (reply.status)
-						return reply.peer_active;
+			Socket newSocket = new Socket(ipAddr, port);
+			ObjectOutputStream newOut = new ObjectOutputStream(newSocket.getOutputStream());
+			ObjectInputStream newIn = new ObjectInputStream(newSocket.getInputStream());
+			Message message = new Message(12);
+			newOut.writeObject(message);
+			newOut.flush();
+			Message reply = (Message) newIn.readObject();
+			if (reply.status)
+				return reply.peer_active;
 		} catch (ClassNotFoundException e) {
-				System.err.println("Invalid message. Aborting...");
+			System.err.println("Invalid message. Aborting...");
 		} catch (IOException e) {
-				System.err.println("Connection error. Aborting...");
-				return false;
+			System.err.println("Connection error. Aborting...");
+			return false;
 		}
 		return false;
 	}
@@ -137,7 +150,7 @@ public class TrackerThread implements ITracker, Runnable {
 					logout();
 					break;
 				case 4:
-					respondToNotify();
+					respondToNotify(message.username, message.status);
 					break;
 				case 10:
 					reply_list();
