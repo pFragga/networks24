@@ -5,12 +5,14 @@ import java.util.ArrayList;
  * maybe make generic: <T>
  */
 public class Message implements Serializable {
+	private static final long serialVersionUID = 42L; // ignore this
+
 	ArrayList<String> availableFiles = null;
 	boolean peer_active = false; // checkActive()
-	boolean status = false; // success/failure
+	boolean status = true; // success/failure
 	boolean toPeer = false;
 	int msg_type;
-	int port = 0;
+	int port;
 	String ipaddr = "";
 	String password = "";
 	String token_id = "";

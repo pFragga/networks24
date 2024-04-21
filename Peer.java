@@ -18,21 +18,21 @@ public class Peer implements IPeer {
 	private ObjectInputStream in;
 	private static Scanner stdin;
 	private static boolean running;
-	private static Socket connection;
+	private Socket connection;
 
 	public Peer() {
-		this.id++;
+		id++;
 		this.sharedDir = "shared_directory_" + id; // FIXME
 		this.fileDownloadList = "fileDownloadList.txt";
 		this.sharedFiles = new ArrayList<>();
-		this.stdin = new Scanner(System.in);
-		this.running = true;
+		stdin = new Scanner(System.in);
+		running = true;
 	}
 
 	@Override
 	public void list() {
-		connect("localhost", 9090);
 		try {
+			connect("localhost", 9090);
 			// send request
 			Message message = new Message(10);
 			out.writeObject(message);
@@ -40,10 +40,13 @@ public class Peer implements IPeer {
 
 			// handle response
 			Message reply = (Message) in.readObject();
-			ArrayList<String> availableFiles = reply.availableFiles;
-			System.out.println("Available files:\n================");
-			for (String filename: availableFiles) {
-				System.out.println(filename);
+			if (reply.status) {
+				System.out.println("Available files:\n================");
+				for (String filename: reply.availableFiles) {
+					System.out.println(filename);
+				}
+			} else {
+				System.out.println("Could not get file listing.");
 			}
 		} catch (ClassNotFoundException e) {
 			System.err.println("Invalid message received. Aborting...");
@@ -89,7 +92,8 @@ public class Peer implements IPeer {
 				"[r]\tregister\n" +
 				"[l]\tlogin\n" +
 				"[L]\tlogout without quiting\n\n" +
-				"[l]\tlist tracker's known files\n\n" +
+				"[d]\tget details for a certain file\n" +
+				"[ls]\tlist tracker's known files\n\n" +
 				"[h]\tshow usage\n" +
 				"[q]\tlogout and quit\n"
 				);
@@ -103,11 +107,11 @@ public class Peer implements IPeer {
 			String filename;
 			while ((filename = reader.readLine()) != null) {
 				File sharedFile = new File(sharedDir + "/" + filename);
-				if (sharedFile.exists() && !sharedFiles.contains(sharedFile)) {
+				if (sharedFile.exists() && !sharedFiles.contains(sharedFile))
 					sharedFiles.add(sharedFile);
-				}
 			}
 			//if (!sharedFiles.isEmpty()) {
+			//	System.out.println();
 			//	for (File shareFile: sharedFiles) {
 			//		System.out.println(shareFile);
 			//	}
@@ -130,9 +134,8 @@ public class Peer implements IPeer {
 
 	private void disconnect() {
 		try {
-			if (connection != null && !connection.isClosed()) {
+			if (connection != null && !connection.isClosed())
 				connection.close();
-			}
 		} catch (IOException e) {
 			System.err.println("Connection error. Aborting...");
 		}
@@ -146,15 +149,21 @@ public class Peer implements IPeer {
 			System.out.print("(h for help)> ");
 			String input = stdin.next();
 			switch (input) {
-				case "l":
-					peer.list();
-					break;
 				case "r":
 					peer.register();
 					break;
-
-				/* TODO: add more here */
-
+				case "l":
+					peer.login();
+					break;
+				case "L":
+					peer.logout();
+					break;
+				case "d":
+					peer.details();
+					break;
+				case "ls":
+					peer.list();
+					break;
 				case "h":
 					peer.showUsage();
 					break;

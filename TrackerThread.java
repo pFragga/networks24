@@ -9,17 +9,17 @@ import java.util.List;
 public class TrackerThread implements ITracker, Runnable {
 	//List<User> registeredPeersInfo = new ArrayList<>();
 	//List<User> activePeersInfo = new ArrayList<>();
-	List<String> allFilenames;
 	//Map<String, Integer> filenamesToTokenIDs = null;
+	private static List<String> allFilenames;
 	private static int id = 1;
 	private Socket clientSocket;
 	private ObjectOutputStream out;
 	private ObjectInputStream in;
 
 	public TrackerThread(Socket clientSocket) {
-		this.id++;
+		id++;
 		this.clientSocket = clientSocket;
-		this.allFilenames = new ArrayList<>();
+		allFilenames = new ArrayList<>();
 	}
 
 	@Override
@@ -42,6 +42,7 @@ public class TrackerThread implements ITracker, Runnable {
 	public void reply_list() {
 		Message message = new Message(10);
 		message.availableFiles = new ArrayList<>(allFilenames);
+		message.status = allFilenames == null;
 		try {
 			out.writeObject(message);
 			out.flush();
@@ -67,9 +68,15 @@ public class TrackerThread implements ITracker, Runnable {
 				case 1:
 					register();
 					break;
-
-				/* TODO: add more functions here */
-
+				case 2:
+					login();
+					break;
+				case 3:
+					logout();
+					break;
+				case 4:
+					respondToNotify();
+					break;
 				case 10:
 					reply_list();
 					break;
