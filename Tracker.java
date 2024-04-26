@@ -47,7 +47,7 @@ class Tracker {
 
 		/*
 		 * Always get the output stream first, instead of the input stream. If
-		 * you do, stdin fleezes and you'll be stuck forever.
+		 * you do, stdin freezes and you'll be stuck forever.
 		 * TODO: fix the computer world.
 		 */
 		void getStreams() throws IOException {
@@ -89,7 +89,7 @@ class Tracker {
 				if ((response.status = !registeredPeersInfo.containsKey(username))) {
 					User newUser = new User(username, password);
 					registeredPeersInfo.put(username, newUser);
-					System.out.println("Registered " + newUser.username);
+					System.out.println("New User: " + newUser.username);
 				} else {
 					response.description = "Username taken. Try another.";
 				}
@@ -104,7 +104,7 @@ class Tracker {
 				Message registration = (Message) input.readObject();
 				String username = registration.username;
 				String password = registration.password;
-				Message response = new Message(MessageType.REGISTER);
+				Message response = new Message(MessageType.LOGIN);
 				if ((response.status = registeredPeersInfo.containsKey(username))) {
 					User user = registeredPeersInfo.get(username);
 					if ((response.status = password.equals(user.password))) {
@@ -116,7 +116,7 @@ class Tracker {
 								tokenID,
 								username);
 						activePeers.put(tokenID, info);
-						System.out.println(info + ": active"); // calls info.toString();
+						System.out.println(activePeers);
 						response.tokenID = tokenID;
 					} else {
 						response.description = "Invalid credentials.";

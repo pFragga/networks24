@@ -88,7 +88,7 @@ class Peer {
 			return;
 		}
 
-		if (tokenID != null && !tokenID.isEmpty()) {
+		if (registered) {
 			System.out.println("You need to logout first.");
 			return;
 		}
@@ -144,6 +144,7 @@ class Peer {
 			if (response.status) {
 				tokenID = response.tokenID;
 				System.out.println("Login successful. TOKENID: " + tokenID);
+				/* TODO: inform tracker about shared files */
 			} else {
 				System.out.println("Login failed. Reason: "
 						+ response.description);
