@@ -156,11 +156,35 @@ class Peer {
 		}
 	}
 
-	/* TODO */
 	void logout() {
 		if (!connected) {
 			System.out.println("You are already not connected.");
 			return;
+		}
+
+		if (tokenID == null || tokenID.isEmpty()) {
+			System.out.println("You have not yet logged in.");
+			return;
+		}
+
+		requestOperation(new Message(MessageType.LOGOUT));
+		try {
+			Message identification = new Message(MessageType.LOGOUT);
+			identification.tokenID = tokenID;
+			sendData(identification);
+			Message response = (Message) input.readObject();
+			if (response.status) {
+				connected = false;
+				tokenID = "";
+				System.out.println("Logout successful.");
+			} else {
+				System.out.print("Logout failed. Reason: "
+						+ response.description);
+			}
+		} catch (ClassNotFoundException e) {
+			System.err.println("Received unknown object from server.");
+		} catch (IOException e) {
+			System.err.println("Could not send message.");
 		}
 	}
 

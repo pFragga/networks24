@@ -130,8 +130,18 @@ class Tracker {
 			}
 		}
 
-		/* TODO */
 		void logout() throws IOException {
+			try {
+				Message identification = (Message) input.readObject();
+				String tokenID = identification.tokenID;
+				Message response = new Message(MessageType.LOGOUT);
+				if ((response.status = activePeers.containsKey(tokenID)))
+					activePeers.remove(tokenID);
+				System.out.println(activePeers);
+				sendData(response);
+			} catch (ClassNotFoundException e) {
+				System.err.println(csocket + "Received unknown object from client.");
+			}
 		}
 
 		void handleConnection() throws IOException {
