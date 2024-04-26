@@ -1,0 +1,5 @@
+#!/bin/sh
+
+java -cp bin PeerMain "${1:-localhost}" "${2:-9090}"
+
+exit $?

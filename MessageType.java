@@ -1,0 +1,11 @@
+enum MessageType {
+	REGISTER,
+	LOGIN,
+	LOGOUT,
+	LIST,
+	DETAILS,
+	INFORM,
+	NOTIFY,
+	DOWNLOAD,
+	GENERIC
+}

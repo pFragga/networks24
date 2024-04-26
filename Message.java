@@ -1,39 +1,30 @@
 import java.io.Serializable;
-import java.util.ArrayList;
 
-/*
- * maybe make generic: <T>
- */
-public class Message implements Serializable {
-	private static final long serialVersionUID = 42L; // ignore this
+class Message implements Serializable {
+	private static final long serialVersionUID = 42L; // IGNORE
 
-	ArrayList<String> availableFiles = null;
-	boolean peer_active = false; // checkActive()
-	boolean status = true; // success/failure
-	boolean toPeer = false;
-	int msg_type;
-	int port;
-	String ipaddr = "";
-	String password = "";
-	String token_id = "";
-	String username = "";
-	String requestedFileName = "";
-	ArrayList<User> providersForReqFile = null;
+	boolean status;
+	MessageType type;
+	String description;
+	String password;
+	String tokenID;
+	String username;
 
-	/*
-	 * 1 => registration credentials (String username, String password)
-	 * 2 => login
-	 * 3 => logout
-	 * 4 => logout
-	 * 5 => request download
-	 * ...
-	 */
-	Message(int msg_type) {
-		this.msg_type = msg_type;
+	/* this is the default message */
+	Message() {
+		this.status = true;
+		this.type = MessageType.GENERIC;
 	}
 
-	Message(int msg_type, boolean toPeer) {
-		this.msg_type = msg_type;
-		this.toPeer = toPeer;
+	/* we can add more ctors for the message here */
+
+	Message(MessageType type) {
+		this.status = true;
+		this.type = type;
+	}
+
+	Message(boolean status, MessageType type) {
+		this.status = status;
+		this.type = type;
 	}
 }

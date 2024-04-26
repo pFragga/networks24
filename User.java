@@ -1,83 +1,43 @@
-/**
- * Dummy user class that is used by the Tracker remember registered users. 
- */
-public class User {
-	private String username;
-	private String password;
-	private int countDownloads;
-	private int countFailures;
-	private String ipAddr;
-	private int port;
-	private int tokenID;
+class User {
+	String username;
+	String password;
+	int countDownloads;
+	int countFailures;
 
 	// Constructor
-	public User(String username, String password) {
+	User(String username, String password) {
 		this.username = username;
 		this.password = password;
 		this.countDownloads = 0;
 		this.countFailures = 0;
 	}
 
-	// Getters and setters for username and password
-	public String getUsername() {
-		return username;
-	}
-
-	public void setUsername(String username) {
-		this.username = username;
-	}
-
-	public String getPassword() {
-		return password;
-	}
-
-	public void setPassword(String password) {
-		this.password = password;
-	}
-
-	// Getters and setters for countDownloads and countFailures
-	public int getCountDownloads() {
-		return countDownloads;
-	}
-
-	public synchronized void setCountDownloads(int countDownloads) {
+	synchronized void setCountDownloads(int countDownloads) {
 		this.countDownloads = countDownloads;
 	}
 
-	public int getCountFailures() {
-		return countFailures;
-	}
-
-	public synchronized void setCountFailures(int countFailures) {
+	synchronized void setCountFailures(int countFailures) {
 		this.countFailures = countFailures;
 	}
 
 	// Method to increment countDownloads
-	public void incrementCountDownloads() {
+	void incrementCountDownloads() {
 		this.countDownloads++;
 	}
 
 	// Method to increment countFailures
-	public void incrementCountFailures() {
+	void incrementCountFailures() {
 		this.countFailures++;
 	}
 
 	// Method to reset countDownloads and countFailures
-	public synchronized void resetCounts() {
+	synchronized void resetCounts() {
 		this.countDownloads = 0;
 		this.countFailures = 0;
 	}
 
-	public String getAddr() {
-			return this.ipAddr;
-	}
-
-	public int getPort() {
-			return this.port;
-	}
-
 	@Override
 	public String toString() {
-		return tokenID + " (" + username + ") => " + ipAddr + ":" + port;
+		return username + "[DL=" + countDownloads + ",FL=" + countFailures + "]";
 	}
 }
