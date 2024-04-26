@@ -13,14 +13,16 @@ class Peer {
 	ObjectInputStream input;
 	ObjectOutputStream output;
 	Socket csocket;
+	ServerSocket serverSocket; // Add ServerSocket
 
 	/* tracker info */
 	String trackerHost;
 	int trackerPort;
 
-	Peer(String trackerHost, int trackerPort) {
+	Peer(String trackerHost, int trackerPort, int peerPort) {
 		this.trackerHost = trackerHost;
 		this.trackerPort = trackerPort;
+		this.serverSocket = new ServerSocket(peerPort);
 	}
 
 	void getHelp() {
@@ -207,6 +209,8 @@ class Peer {
 	void begin() {
 		running = true;
 		connect(trackerHost, trackerPort); // attempt connection on startup
+		PeerThread peerThread = new PeerThread(this, serverSocket);
+		peerThread.start();
 		while (running) {
 			System.out.print("(h for help)> ");
 			String letter = stdin.nextLine();

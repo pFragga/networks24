@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
+
 class Tracker {
 	boolean listening;
 	ServerSocket ssocket;
@@ -139,16 +140,16 @@ class Tracker {
 				while (!csocket.isClosed()) {
 					Message request = (Message) input.readObject();
 					switch (request.type) {
-						case MessageType.REGISTER:
+						case REGISTER:
 							register();
 							break;
-						case MessageType.LOGIN:
+						case LOGIN:
 							login();
 							break;
-						case MessageType.LOGOUT:
+						case LOGOUT:
 							logout();
 							break;
-						case MessageType.GENERIC:
+						case GENERIC:
 							echo();
 							break;
 
