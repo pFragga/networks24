@@ -1,0 +1,5 @@
+#!/bin/sh
+
+java -cp bin TrackerMain "${1:-9090}"
+
+exit $?
