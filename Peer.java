@@ -122,14 +122,46 @@ class Peer {
 		}
 	}
 
-	void login() {
+	void inform() {
 		if (!connected) {
 			System.out.println("You need to be connected first.");
 			return;
 		}
 
-		if (!registered) {
-			System.out.println("You need to register before logging in.");
+		if (tokenID == null || tokenID.isEmpty()) {
+			System.out.println("You are already logged in.");
+			return;
+		}
+
+		/* in case a new file has been added in the meantime... */
+		updateSharedFiles();
+
+		try {
+			Message information = new Message(MessageType.INFORM);
+			ArrayList<String> sharedFilesNames = new ArrayList<>();
+			for (File f: sharedFiles) {
+				sharedFilesNames.add(f.getName());
+			}
+			information.sharedFilesNames = sharedFilesNames;
+			information.tokenID = tokenID;
+			sendData(information);
+			Message response = (Message) input.readObject();
+			if (response.status) {
+				System.out.println("Successfully informed tracker about shared files.");
+			} else {
+				System.out.println("Failed to inform tracker about shared files."
+						+ "Reason: " + response.description);
+			}
+		} catch (ClassNotFoundException e) {
+			System.err.println("Received unknown object from server.");
+		} catch (IOException e) {
+			System.err.println("Could not send message.");
+		}
+	}
+
+	void login() {
+		if (!connected) {
+			System.out.println("You need to be connected first.");
 			return;
 		}
 
@@ -150,7 +182,7 @@ class Peer {
 			if (response.status) {
 				tokenID = response.tokenID;
 				System.out.println("Login successful. TOKENID: " + tokenID);
-				/* TODO: inform tracker about shared files */
+				inform();
 			} else {
 				System.out.println("Login failed. Reason: "
 						+ response.description);

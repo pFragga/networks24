@@ -1,4 +1,5 @@
 import java.io.Serializable;
+import java.util.ArrayList;
 
 class Message implements Serializable {
 	private static final long serialVersionUID = 42L; // IGNORE
@@ -9,6 +10,7 @@ class Message implements Serializable {
 	String password;
 	String tokenID;
 	String username;
+	ArrayList<String> sharedFilesNames;
 
 	/* this is the default message */
 	Message() {

@@ -1,18 +1,24 @@
 import java.io.*; // TODO: get rid of wildcard imports in future
 import java.net.*;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 
 class Tracker {
 	boolean listening;
 	ServerSocket ssocket;
 	Map<String, User> registeredPeersInfo;
 	Map<String, ContactInfo> activePeers;
+	Set<String> allFilenames;
+	Map<String, Set<String>> filenamesToTokenIDs;
 
 	Tracker() {
 		registeredPeersInfo = new HashMap<>();
 		activePeers = new HashMap<>();
+		allFilenames = new HashSet<>();
+		filenamesToTokenIDs = new HashMap<>();
 	}
 
 	/*
@@ -65,38 +71,47 @@ class Tracker {
 		 * I wrote this echo functionality for testing/debugging when I was
 		 * rethinking things. It's not required by any other method.
 		 */
-		void echo() throws IOException {
-			try {
-				Message clientEcho;
-				do {
-					clientEcho = (Message) input.readObject();
-					System.out.println(csocket + " ECHO: " + clientEcho.description);
-					sendData(clientEcho); // ECHO Protocol
-				} while (clientEcho.description != null && !clientEcho.description.equals("END"));
-			} catch (ClassNotFoundException e) {
-				System.err.println(csocket + "Received unknown object from client.");
-			} finally {
-				System.err.println(csocket + " Client quit.");
-			}
+		void echo() throws IOException, ClassNotFoundException {
+			Message clientEcho;
+			do {
+				clientEcho = (Message) input.readObject();
+				System.out.println(csocket + " ECHO: " + clientEcho.description);
+				sendData(clientEcho); // ECHO Protocol
+			} while (clientEcho.description != null && !clientEcho.description.equals("END"));
+			System.out.println(csocket + " Client quit.");
 		}
 
-		void register() throws IOException {
-			try {
-				Message registration = (Message) input.readObject();
-				String username = registration.username;
-				String password = registration.password;
-				Message response = new Message(MessageType.REGISTER);
-				if ((response.status = !registeredPeersInfo.containsKey(username))) {
-					User newUser = new User(username, password);
-					registeredPeersInfo.put(username, newUser);
-					System.out.println("New User: " + newUser.username);
-				} else {
-					response.description = "Username taken. Try another.";
-				}
-				sendData(response);
-			} catch (ClassNotFoundException e) {
-				System.err.println(csocket + "Received unknown object from client.");
+		void register() throws IOException, ClassNotFoundException {
+			Message registration = (Message) input.readObject();
+			String username = registration.username;
+			String password = registration.password;
+			Message response = new Message(MessageType.REGISTER);
+			if ((response.status = !registeredPeersInfo.containsKey(username))) {
+				User newUser = new User(username, password);
+				registeredPeersInfo.put(username, newUser);
+				System.out.println("New User: " + newUser.username);
+			} else {
+				response.description = "Username taken. Try another.";
 			}
+			sendData(response);
+		}
+
+		void inform() throws IOException, ClassNotFoundException {
+			Message information = (Message) input.readObject();
+			String tokenID = information.tokenID;
+			Message response = new Message(MessageType.INFORM);
+			if ((response.status = activePeers.containsKey(tokenID))) {
+				for (String filename: information.sharedFilesNames) {
+					updateAllFilenames(filename);
+					updateFilenamesToTokenIDs(filename, tokenID);
+				}
+			} else {
+				response.description = "Bad token ID.";
+			}
+			System.out.println("Updated data structures:\n" +
+					"allFilenames = " + allFilenames +
+					"\nfilenamesToTokenIDs = " + filenamesToTokenIDs);
+			sendData(response);
 		}
 
 		void login() throws IOException {
@@ -125,23 +140,23 @@ class Tracker {
 					response.description = "Invalid credentials.";
 				}
 				sendData(response);
+
+				/* if peer could not login, no reason to inform */
+				if (response.status)
+					inform();
 			} catch (ClassNotFoundException e) {
 				System.err.println(csocket + "Received unknown object from client.");
 			}
 		}
 
-		void logout() throws IOException {
-			try {
-				Message identification = (Message) input.readObject();
-				String tokenID = identification.tokenID;
-				Message response = new Message(MessageType.LOGOUT);
-				if ((response.status = activePeers.containsKey(tokenID)))
-					activePeers.remove(tokenID);
-				System.out.println(activePeers);
-				sendData(response);
-			} catch (ClassNotFoundException e) {
-				System.err.println(csocket + "Received unknown object from client.");
-			}
+		void logout() throws IOException, ClassNotFoundException {
+			Message identification = (Message) input.readObject();
+			String tokenID = identification.tokenID;
+			Message response = new Message(MessageType.LOGOUT);
+			if ((response.status = activePeers.containsKey(tokenID)))
+				activePeers.remove(tokenID);
+			System.out.println("activePeers = " + activePeers);
+			sendData(response);
 		}
 
 		void handleConnection() throws IOException {
@@ -183,6 +198,21 @@ class Tracker {
 				clientCleanup();
 			}
 		}
+	}
+
+	synchronized void updateAllFilenames(String filename) {
+		allFilenames.add(filename);
+	}
+
+	synchronized void updateFilenamesToTokenIDs(String filename, String tokenID) {
+		Set<String> tokenIDs;
+		if (filenamesToTokenIDs.containsKey(filename)) {
+			tokenIDs = filenamesToTokenIDs.get(filename);
+		} else {
+			tokenIDs = new HashSet<>();
+		}
+		tokenIDs.add(tokenID);
+		filenamesToTokenIDs.put(filename, tokenIDs);
 	}
 
 	void serverCleanup() {
