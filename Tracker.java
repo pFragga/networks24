@@ -158,6 +158,16 @@ class Tracker {
 			sendData(response);
 		}
 
+		void reply_list() throws IOException, ClassNotFoundException {
+			Message response = new Message(MessageType.LIST);
+			if (response.status = !allFilenames.isEmpty()) {
+				response.description = "";
+				for (String filename: allFilenames)
+					response.description += filename + "\n";
+			}
+			sendData(response);
+		}
+
 		void handleConnection() throws IOException {
 			try {
 				while (!csocket.isClosed()) {
@@ -174,6 +184,9 @@ class Tracker {
 							break;
 						case MessageType.GENERIC:
 							echo();
+							break;
+						case MessageType.LIST:
+							reply_list();
 							break;
 
 						/* TODO: add more functionality here */

@@ -37,6 +37,7 @@ class Peer {
 				"[r]\tregister (requires connection)\n" +
 				"[l]\tlogin (requires connection)\n" +
 				"[L]\tlogout (requires connection)\n\n" +
+				"[ls]\tlist tracker's known files\n" +
 				"[h]\tshow help info\n" +
 				"[q]\tquit (implies logout and disconnect)");
 	}
@@ -204,6 +205,28 @@ class Peer {
 		}
 	}
 
+	void list() throws IOException, ClassNotFoundException {
+		if (!connected) {
+			System.out.println("You are already not connected.");
+			return;
+		}
+
+		if (tokenID == null || tokenID.isEmpty()) {
+			System.out.println("You have not yet logged in.");
+			return;
+		}
+
+		sendData(new Message(MessageType.LIST));
+
+		Message response = (Message) input.readObject();
+		if (response.status) {
+			System.out.println("Available files\n===============\n" +
+					response.description);
+		} else {
+			System.out.println("No available files yet.");
+		}
+	}
+
 	void echo() throws IOException, ClassNotFoundException {
 		if (!connected) {
 			System.out.println("You need to be connected first.");
@@ -273,6 +296,9 @@ class Peer {
 						break;
 					case "L":
 						logout();
+						break;
+					case "ls":
+						list();
 						break;
 					case "h":
 						getHelp();
