@@ -7,5 +7,7 @@ enum MessageType {
 	INFORM,
 	NOTIFY,
 	DOWNLOAD,
-	GENERIC
+	CHECK_ACTIVE_RESPONSE,
+	GENERIC;
+
 }
