@@ -1,5 +1,7 @@
 import java.io.*; // TODO: get rid of wildcard imports in future
 import java.net.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
 class Peer {
@@ -13,14 +15,18 @@ class Peer {
 	ObjectInputStream input;
 	ObjectOutputStream output;
 	Socket csocket;
+	List<File> sharedFiles;
+	String sharedDir;
 
 	/* tracker info */
 	String trackerHost;
 	int trackerPort;
 
-	Peer(String trackerHost, int trackerPort) {
+	Peer(String trackerHost, int trackerPort, String sharedDir) {
 		this.trackerHost = trackerHost;
 		this.trackerPort = trackerPort;
+		this.sharedFiles = new ArrayList<>();
+		this.sharedDir = sharedDir;
 	}
 
 	void getHelp() {
@@ -213,7 +219,7 @@ class Peer {
 		}
 	}
 
-	/**
+	/*
 	 * Establishes a "handshake" with the Tracker. Based on the request's
 	 * MessageType, the Tracker knows which method to call.
 	 */
@@ -229,8 +235,32 @@ class Peer {
 		}
 	}
 
+	/*
+	 * Reading 'fileDownloadList.txt' is really unnecessary, since we could
+	 * just get the listing of sharedDir instead, but...
+	 *
+	 * May have to send another email to <pittaras@aueb.gr>
+	 */
+	void updateSharedFiles() {
+		try (
+			BufferedReader reader = new BufferedReader(new FileReader("fileDownloadList.txt"));
+			) {
+			System.out.print("Updating shared files... ");
+			String filename;
+			while ((filename = reader.readLine()) != null) {
+				File currFile = new File(sharedDir, filename);
+				if (currFile.exists() && !sharedFiles.contains(currFile))
+					sharedFiles.add(currFile);
+			}
+			System.out.println("OK.");
+		} catch (IOException e) {
+			System.err.println("Could not read fileDownloadList.txt");
+		}
+	}
+
 	void begin() {
 		running = true;
+		updateSharedFiles();
 		connect(trackerHost, trackerPort); // attempt connection on startup
 		while (running) {
 			System.out.print("(h for help)> ");

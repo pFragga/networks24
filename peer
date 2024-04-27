@@ -1,5 +1,5 @@
 #!/bin/sh
 
-java -cp bin PeerMain "${1:-localhost}" "${2:-9090}"
+java -cp bin PeerMain "${1:-localhost}" "${2:-9090}" "${3:-shared_directory_1}"
 
 exit $?
