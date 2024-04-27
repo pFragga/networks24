@@ -41,13 +41,12 @@ class Tracker {
 		void clientCleanup() {
 			try {
 				if (csocket != null && !csocket.isClosed()) {
-					System.err.println("Closing socket for " + csocket);
 					csocket.close();
 					output.close();
 					input.close();
 				}
 			} catch (IOException e) {
-				System.err.println("Could not close client socket.");
+				System.err.println(csocket + ": could not close client socket.");
 			}
 		}
 
@@ -131,7 +130,7 @@ class Tracker {
 								tokenID,
 								username);
 						activePeers.put(tokenID, info);
-						System.out.println(activePeers);
+						System.out.println("activePeers = " + activePeers);
 						response.tokenID = tokenID;
 					} else {
 						response.description = "Invalid credentials.";
@@ -193,7 +192,7 @@ class Tracker {
 				getStreams();
 				handleConnection();
 			} catch (IOException e) {
-				e.printStackTrace();
+				System.err.println(csocket + ": Terminated connection.");
 			} finally {
 				clientCleanup();
 			}
@@ -234,7 +233,7 @@ class Tracker {
 			do {
 				System.out.println("Listening on port " + port + "...");
 				Socket connection = ssocket.accept();
-				System.out.println("Accepted connection: " + connection);
+				System.out.println(connection + ": Accepted connection.");
 				new Thread(new TrackerThread(connection)).start();
 			} while (listening);
 		} catch (IOException e) {
