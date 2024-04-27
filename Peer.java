@@ -84,11 +84,13 @@ class Peer {
 	}
 
 	void sendData(Message message) throws IOException {
+		if (!connected)
+			return;
 		output.writeObject(message);
 		output.flush();
 	}
 
-	void register() {
+	void register() throws IOException, ClassNotFoundException {
 		if (!connected) {
 			System.out.println("You need to be connected first.");
 			return;
@@ -99,30 +101,24 @@ class Peer {
 			return;
 		}
 
-		requestOperation(new Message(MessageType.REGISTER));
-		try {
-			Message registration = new Message(MessageType.REGISTER);
-			System.out.print("Enter your username: ");
-			registration.username = stdin.nextLine();
-			System.out.print("Enter your password: ");
-			registration.password = stdin.nextLine(); // TODO: hide password
-			sendData(registration);
-			Message response = (Message) input.readObject();
-			if (response.status) {
-				registered = true;
-				System.out.println("Registration successful.");
-			} else {
-				System.out.println("Registration failed. Reason: "
-						+ response.description);
-			}
-		} catch (ClassNotFoundException e) {
-			System.err.println("Received unknown object from server.");
-		} catch (IOException e) {
-			System.err.println("Could not send message.");
+		sendData(new Message(MessageType.REGISTER));
+
+		Message registration = new Message(MessageType.REGISTER);
+		System.out.print("Enter your username: ");
+		registration.username = stdin.nextLine();
+		System.out.print("Enter your password: ");
+		registration.password = stdin.nextLine(); // TODO: hide password
+		sendData(registration);
+		Message response = (Message) input.readObject();
+		if (response.status) {
+			registered = true;
+			System.out.println("Registration successful.");
+		} else {
+			System.out.println("Registration failed. Reason: " + response.description);
 		}
 	}
 
-	void inform() {
+	void inform() throws IOException, ClassNotFoundException {
 		if (!connected) {
 			System.out.println("You need to be connected first.");
 			return;
@@ -136,30 +132,24 @@ class Peer {
 		/* in case a new file has been added in the meantime... */
 		updateSharedFiles();
 
-		try {
-			Message information = new Message(MessageType.INFORM);
-			ArrayList<String> sharedFilesNames = new ArrayList<>();
-			for (File f: sharedFiles) {
-				sharedFilesNames.add(f.getName());
-			}
-			information.sharedFilesNames = sharedFilesNames;
-			information.tokenID = tokenID;
-			sendData(information);
-			Message response = (Message) input.readObject();
-			if (response.status) {
-				System.out.println("Successfully informed tracker about shared files.");
-			} else {
-				System.out.println("Failed to inform tracker about shared files."
-						+ "Reason: " + response.description);
-			}
-		} catch (ClassNotFoundException e) {
-			System.err.println("Received unknown object from server.");
-		} catch (IOException e) {
-			System.err.println("Could not send message.");
+		Message information = new Message(MessageType.INFORM);
+		ArrayList<String> sharedFilesNames = new ArrayList<>();
+		for (File f: sharedFiles) {
+			sharedFilesNames.add(f.getName());
+		}
+		information.sharedFilesNames = sharedFilesNames;
+		information.tokenID = tokenID;
+		sendData(information);
+		Message response = (Message) input.readObject();
+		if (response.status) {
+			System.out.println("Successfully informed tracker about shared files.");
+		} else {
+			System.out.println("Failed to inform tracker about shared files."
+					+ "Reason: " + response.description);
 		}
 	}
 
-	void login() {
+	void login() throws IOException, ClassNotFoundException {
 		if (!connected) {
 			System.out.println("You need to be connected first.");
 			return;
@@ -170,31 +160,25 @@ class Peer {
 			return;
 		}
 
-		requestOperation(new Message(MessageType.LOGIN));
-		try {
-			Message credentials = new Message(MessageType.LOGIN);
-			System.out.print("Enter your username: ");
-			credentials.username = stdin.nextLine();
-			System.out.print("Enter your password: ");
-			credentials.password = stdin.nextLine(); // TODO: hide password
-			sendData(credentials);
-			Message response = (Message) input.readObject();
-			if (response.status) {
-				tokenID = response.tokenID;
-				System.out.println("Login successful. TOKENID: " + tokenID);
-				inform();
-			} else {
-				System.out.println("Login failed. Reason: "
-						+ response.description);
-			}
-		} catch (ClassNotFoundException e) {
-			System.err.println("Received unknown object from server.");
-		} catch (IOException e) {
-			System.err.println("Could not send message.");
+		sendData(new Message(MessageType.LOGIN));
+
+		Message credentials = new Message(MessageType.LOGIN);
+		System.out.print("Enter your username: ");
+		credentials.username = stdin.nextLine();
+		System.out.print("Enter your password: ");
+		credentials.password = stdin.nextLine(); // TODO: hide password
+		sendData(credentials);
+		Message response = (Message) input.readObject();
+		if (response.status) {
+			tokenID = response.tokenID;
+			System.out.println("Login successful. TOKENID: " + tokenID);
+			inform();
+		} else {
+			System.out.println("Login failed. Reason: " + response.description);
 		}
 	}
 
-	void logout() {
+	void logout() throws IOException, ClassNotFoundException {
 		if (!connected) {
 			System.out.println("You are already not connected.");
 			return;
@@ -205,66 +189,39 @@ class Peer {
 			return;
 		}
 
-		requestOperation(new Message(MessageType.LOGOUT));
-		try {
-			Message identification = new Message(MessageType.LOGOUT);
-			identification.tokenID = tokenID;
-			sendData(identification);
-			Message response = (Message) input.readObject();
-			if (response.status) {
-				connected = false;
-				tokenID = "";
-				System.out.println("Logout successful.");
-			} else {
-				System.out.print("Logout failed. Reason: "
-						+ response.description);
-			}
-		} catch (ClassNotFoundException e) {
-			System.err.println("Received unknown object from server.");
-		} catch (IOException e) {
-			System.err.println("Could not send message.");
+		sendData(new Message(MessageType.LOGOUT));
+
+		Message identification = new Message(MessageType.LOGOUT);
+		identification.tokenID = tokenID;
+		sendData(identification);
+		Message response = (Message) input.readObject();
+		if (response.status) {
+			connected = false;
+			tokenID = "";
+			System.out.println("Logout successful.");
+		} else {
+			System.out.print("Logout failed. Reason: " + response.description);
 		}
 	}
 
-	void echo() {
+	void echo() throws IOException, ClassNotFoundException {
 		if (!connected) {
 			System.out.println("You need to be connected first.");
 			return;
 		}
 
-		requestOperation(new Message()); // GENERIC
-		try {
-			String echoStr;
-			do {
-				System.out.print("CLIENT ECHO: ");
-				echoStr = stdin.nextLine();
-				Message clientEcho = new Message();
-				clientEcho.description = echoStr;
-				sendData(clientEcho);
-				Message serverEcho = (Message) input.readObject();
-				System.out.println("SERVER ECHO: " + serverEcho.description);
-			} while (echoStr != null && !echoStr.equals("END"));
-		} catch (ClassNotFoundException e) {
-			System.err.println("Received unknown object from server.");
-		} catch (IOException e) {
-			System.err.println("Could not send message.");
-		}
-	}
+		sendData(new Message()); // GENERIC
 
-	/*
-	 * Establishes a "handshake" with the Tracker. Based on the request's
-	 * MessageType, the Tracker knows which method to call.
-	 */
-	void requestOperation(Message request) {
-		if (!connected) {
-			return;
-		}
-
-		try {
-			sendData(request);
-		} catch (IOException e) {
-			System.err.println("Could not send request.");
-		}
+		String echoStr;
+		do {
+			System.out.print("CLIENT ECHO: ");
+			echoStr = stdin.nextLine();
+			Message clientEcho = new Message();
+			clientEcho.description = echoStr;
+			sendData(clientEcho);
+			Message serverEcho = (Message) input.readObject();
+			System.out.println("SERVER ECHO: " + serverEcho.description);
+		} while (echoStr != null && !echoStr.equals("END"));
 	}
 
 	/*
@@ -297,36 +254,42 @@ class Peer {
 		while (running) {
 			System.out.print("(h for help)> ");
 			String letter = stdin.nextLine();
-			switch (letter) {
-				case "c":
-					connect(trackerHost, trackerPort);
-					break;
-				case "d":
-					disconnect();
-					break;
-				case "e":
-					echo();
-					break;
-				case "r":
-					register();
-					break;
-				case "l":
-					login();
-					break;
-				case "L":
-					logout();
-					break;
-				case "h":
-					getHelp();
-					break;
-				case "q":
-					if (tokenID != null && !tokenID.isEmpty())
-						logout();
-					if (connected)
+			try {
+				switch (letter) {
+					case "c":
+						connect(trackerHost, trackerPort);
+						break;
+					case "d":
 						disconnect();
-					running = false;
-					break;
-				default:
+						break;
+					case "e":
+						echo();
+						break;
+					case "r":
+						register();
+						break;
+					case "l":
+						login();
+						break;
+					case "L":
+						logout();
+						break;
+					case "h":
+						getHelp();
+						break;
+					case "q":
+						if (tokenID != null && !tokenID.isEmpty())
+							logout();
+						if (connected)
+							disconnect();
+						running = false;
+						break;
+					default:
+				}
+			} catch (ClassNotFoundException e) {
+				System.err.println("Received unknown object from server.");
+			} catch (IOException e) {
+				System.err.println("Could not send message.");
 			}
 		}
 	}
