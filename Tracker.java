@@ -1,5 +1,6 @@
 import java.io.*; // TODO: get rid of wildcard imports in future
 import java.net.*;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -168,6 +169,23 @@ class Tracker {
 			sendData(response);
 		}
 
+		void reply_details() throws IOException, ClassNotFoundException {
+			Message request = (Message) input.readObject();
+			String filename = request.description;
+			Message response = new Message(MessageType.DETAILS);
+			Set<String> tokenIDs = filenamesToTokenIDs.get(filename);
+			if (response.status = tokenIDs != null && !tokenIDs.isEmpty()) {
+				ArrayList<ContactInfo> details = new ArrayList<>();
+				for (String tokenID: tokenIDs) {
+					details.add(activePeers.get(tokenID));
+				}
+				response.details = new ArrayList<>(details);
+			} else {
+				response.description = "No info about file '" + filename + "'";
+			}
+			sendData(response);
+		}
+
 		void handleConnection() throws IOException {
 			try {
 				while (!csocket.isClosed()) {
@@ -187,6 +205,9 @@ class Tracker {
 							break;
 						case MessageType.LIST:
 							reply_list();
+							break;
+						case MessageType.DETAILS:
+							reply_details();
 							break;
 
 						/* TODO: add more functionality here */

@@ -38,6 +38,7 @@ class Peer {
 				"[l]\tlogin (requires connection)\n" +
 				"[L]\tlogout (requires connection)\n\n" +
 				"[ls]\tlist tracker's known files\n" +
+				"[Q]\tquery details about given file\n\n" +
 				"[h]\tshow help info\n" +
 				"[q]\tquit (implies logout and disconnect)");
 	}
@@ -227,6 +228,35 @@ class Peer {
 		}
 	}
 
+	void details() throws IOException, ClassNotFoundException {
+		if (!connected) {
+			System.out.println("You are already not connected.");
+			return;
+		}
+
+		if (tokenID == null || tokenID.isEmpty()) {
+			System.out.println("You have not yet logged in.");
+			return;
+		}
+
+		sendData(new Message(MessageType.DETAILS));
+
+		System.out.print("Details for which file?: ");
+		String filename = stdin.nextLine();
+		Message request = new Message(MessageType.DETAILS);
+		request.description = filename;
+		sendData(request);
+		Message response = (Message) input.readObject();
+		if (response.status) {
+			System.out.println(filename + "\n==========");
+			for (ContactInfo info: response.details) {
+				System.out.println(info);
+			}
+		} else {
+			System.out.println(response.description);
+		}
+	}
+
 	void echo() throws IOException, ClassNotFoundException {
 		if (!connected) {
 			System.out.println("You need to be connected first.");
@@ -300,6 +330,9 @@ class Peer {
 					case "ls":
 						list();
 						break;
+					case "Q": // Q, as in Query
+						details();
+						break;
 					case "h":
 						getHelp();
 						break;
@@ -313,10 +346,14 @@ class Peer {
 					default:
 				}
 			} catch (ClassNotFoundException e) {
+				e.printStackTrace();
 				System.err.println("Received unknown object from server.");
 			} catch (IOException e) {
 				System.err.println("Could not send message.");
+				e.printStackTrace();
 			}
 		}
+
+		stdin.close();
 	}
 }

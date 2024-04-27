@@ -1,6 +1,9 @@
+import java.io.Serializable;
 import java.net.InetAddress;
 
-class ContactInfo {
+class ContactInfo implements Serializable {
+	private static final long serialVersionUID = 43L; // IGNORE
+
 	InetAddress ipAddr;
 	int countDownloads;
 	int countFailures;

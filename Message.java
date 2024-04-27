@@ -11,6 +11,7 @@ class Message implements Serializable {
 	String tokenID;
 	String username;
 	ArrayList<String> sharedFilesNames;
+	ArrayList<ContactInfo> details;
 
 	/* this is the default message */
 	Message() {
