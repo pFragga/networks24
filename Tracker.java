@@ -108,45 +108,38 @@ class Tracker {
 			} else {
 				response.description = "Bad token ID.";
 			}
-			System.out.println("Updated data structures:\n" +
-					"allFilenames = " + allFilenames +
-					"\nfilenamesToTokenIDs = " + filenamesToTokenIDs);
 			sendData(response);
 		}
 
-		void login() throws IOException {
-			try {
-				Message registration = (Message) input.readObject();
-				String username = registration.username;
-				String password = registration.password;
-				Message response = new Message(MessageType.LOGIN);
-				if ((response.status = registeredPeersInfo.containsKey(username))) {
-					User user = registeredPeersInfo.get(username);
-					if ((response.status = password.equals(user.password))) {
-						Random rand = new Random();
-						String tokenID = String.valueOf(rand.nextInt(10000));
-						ContactInfo info = new ContactInfo(
-								csocket.getInetAddress(),
-								csocket.getPort(),
-								tokenID,
-								username);
-						activePeers.put(tokenID, info);
-						System.out.println("activePeers = " + activePeers);
-						response.tokenID = tokenID;
-					} else {
-						response.description = "Invalid credentials.";
-					}
+		void login() throws IOException, ClassNotFoundException {
+			Message registration = (Message) input.readObject();
+			String username = registration.username;
+			String password = registration.password;
+			Message response = new Message(MessageType.LOGIN);
+			if ((response.status = registeredPeersInfo.containsKey(username))) {
+				User user = registeredPeersInfo.get(username);
+				if ((response.status = password.equals(user.password))) {
+					Random rand = new Random();
+					String tokenID = String.valueOf(rand.nextInt(10000));
+					ContactInfo info = new ContactInfo(
+							csocket.getInetAddress(),
+							csocket.getPort(),
+							tokenID,
+							username);
+					updateActivePeers(tokenID, info);
+					response.tokenID = tokenID;
 				} else {
 					response.description = "Invalid credentials.";
 				}
-				sendData(response);
-
-				/* if peer could not login, no reason to inform */
-				if (response.status)
-					inform();
-			} catch (ClassNotFoundException e) {
-				System.err.println(csocket + "Received unknown object from client.");
+			} else {
+				response.description = "Invalid credentials.";
 			}
+			sendData(response);
+
+			/* if peer could not login, no reason to inform */
+			if (response.status)
+				inform();
+			postUpdateDataStructures();
 		}
 
 		void logout() throws IOException, ClassNotFoundException {
@@ -158,6 +151,7 @@ class Tracker {
 				updateFilenamesToTokenIDs(tokenID);
 			}
 			sendData(response);
+			postUpdateDataStructures();
 		}
 
 		void reply_list() throws IOException, ClassNotFoundException {
@@ -217,7 +211,10 @@ class Tracker {
 					}
 				}
 			} catch (ClassNotFoundException e) {
-				System.err.println("Received unknown object from client.");
+				System.err.println(csocket + ": received unknown object.");
+				e.printStackTrace();
+			} catch (EOFException e) {
+				System.err.println(csocket + ": quit.");
 			}
 		}
 
@@ -228,10 +225,18 @@ class Tracker {
 				handleConnection();
 			} catch (IOException e) {
 				System.err.println(csocket + ": Terminated connection.");
+				e.printStackTrace();
 			} finally {
 				clientCleanup();
 			}
 		}
+	}
+
+	void postUpdateDataStructures() {
+		System.out.println("UPDATED DATA STRUCTURES:\n" +
+				"activePeers = " + activePeers + "\n" +
+				"allFilenames = " + allFilenames + "\n" +
+				"filenamesToTokenIDs = " + filenamesToTokenIDs);
 	}
 
 	synchronized void updateAllFilenames(String filename) {
@@ -240,6 +245,10 @@ class Tracker {
 
 	synchronized void updateActivePeers(String tokenID) {
 		activePeers.remove(tokenID);
+	}
+
+	synchronized void updateActivePeers(String tokenID, ContactInfo info) {
+		activePeers.put(tokenID, info);
 	}
 
 	synchronized void updateFilenamesToTokenIDs(String tokenID) {
