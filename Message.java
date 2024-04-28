@@ -1,6 +1,5 @@
 import java.io.Serializable;
 
-
 class Message implements Serializable {
 	private static final long serialVersionUID = 42L; // IGNORE
 
@@ -17,8 +16,7 @@ class Message implements Serializable {
 		this.type = MessageType.GENERIC;
 	}
 
-	/* we can add more actors for the message here */
-
+	/* we can add more constructors for the message here */
 
 	Message(MessageType type) {
 		this.status = true;
