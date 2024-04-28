@@ -19,7 +19,7 @@ class Message implements Serializable {
 		this.type = MessageType.GENERIC;
 	}
 
-	/* we can add more ctors for the message here */
+	/* we can add more constructors for the message here */
 
 	Message(MessageType type) {
 		this.status = true;

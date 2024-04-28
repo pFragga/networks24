@@ -5,7 +5,8 @@ enum MessageType {
 	LIST,
 	DETAILS,
 	INFORM,
+	ACTIVE,
 	NOTIFY,
 	DOWNLOAD,
-	GENERIC
+	GENERIC;
 }
