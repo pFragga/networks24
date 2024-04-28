@@ -62,10 +62,10 @@ class Peer {
 		try {
 			if (connected && !csocket.isClosed()) {
 				csocket.close();
-				System.out.println("Disconnected.");
 				input.close();
 				output.close();
 				connected = false;
+				System.out.println("Disconnected.");
 			} else {
 				System.out.println("You are already disconnected.");
 			}
@@ -198,7 +198,6 @@ class Peer {
 		sendData(identification);
 		Message response = (Message) input.readObject();
 		if (response.status) {
-			connected = false;
 			tokenID = "";
 			System.out.println("Logout successful.");
 		} else {

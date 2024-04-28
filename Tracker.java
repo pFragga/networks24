@@ -153,9 +153,10 @@ class Tracker {
 			Message identification = (Message) input.readObject();
 			String tokenID = identification.tokenID;
 			Message response = new Message(MessageType.LOGOUT);
-			if ((response.status = activePeers.containsKey(tokenID)))
-				activePeers.remove(tokenID);
-			System.out.println("activePeers = " + activePeers);
+			if (response.status = activePeers.containsKey(tokenID)) {
+				updateActivePeers(tokenID);
+				updateFilenamesToTokenIDs(tokenID);
+			}
 			sendData(response);
 		}
 
@@ -235,6 +236,16 @@ class Tracker {
 
 	synchronized void updateAllFilenames(String filename) {
 		allFilenames.add(filename);
+	}
+
+	synchronized void updateActivePeers(String tokenID) {
+		activePeers.remove(tokenID);
+	}
+
+	synchronized void updateFilenamesToTokenIDs(String tokenID) {
+		for (Set<String> tokenIDs : filenamesToTokenIDs.values()) {
+			tokenIDs.remove(tokenID);
+		}
 	}
 
 	synchronized void updateFilenamesToTokenIDs(String filename, String tokenID) {
