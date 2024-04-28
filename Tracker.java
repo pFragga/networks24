@@ -116,6 +116,7 @@ class Tracker {
 			Message registration = (Message) input.readObject();
 			String username = registration.username;
 			String password = registration.password;
+			int listeningPort = registration.listeningPort;
 			Message response = new Message(MessageType.LOGIN);
 			if ((response.status = registeredPeersInfo.containsKey(username))) {
 				User user = registeredPeersInfo.get(username);
@@ -124,7 +125,7 @@ class Tracker {
 					String tokenID = String.valueOf(rand.nextInt(10000));
 					ContactInfo info = new ContactInfo(
 							csocket.getInetAddress(),
-							csocket.getPort(),
+							listeningPort,
 							tokenID,
 							username);
 					updateActivePeers(tokenID, info);
@@ -173,12 +174,49 @@ class Tracker {
 			if (response.status = tokenIDs != null && !tokenIDs.isEmpty()) {
 				ArrayList<ContactInfo> details = new ArrayList<>();
 				for (String tokenID: tokenIDs) {
+					ContactInfo info = activePeers.get(tokenID);
+					//if (checkActive(info)) /* TODO */
 					details.add(activePeers.get(tokenID));
 				}
 				response.details = new ArrayList<>(details);
 			} else {
 				response.description = "No info about file '" + filename + "'";
 			}
+			sendData(response);
+		}
+
+		/*
+		 * Checks if the host provided in the contact info is listening for
+		 * connections, by opening a new socket and new i/o streams.
+		 */
+		boolean checkActive(ContactInfo info) throws IOException, ClassNotFoundException {
+			if (info == null)
+				return false;
+			Socket sock = new Socket(info.ipAddr.getHostAddress(), info.port);
+			System.out.print("Checking activity for " + info + "...");
+			ObjectInputStream in = new ObjectInputStream(
+					sock.getInputStream());
+			ObjectOutputStream out = new ObjectOutputStream(
+					sock.getOutputStream());
+			Message request = new Message(MessageType.ACTIVE);
+			out.writeObject(request);
+			out.flush();
+			Message response = (Message) in.readObject();
+			if (response.status) {
+				System.out.println("OK");
+			} else {
+				System.out.println("NOT OK");
+			}
+			return response.status;
+		}
+
+		/*
+		 * Different from the above method.
+		 * Only replies to peers whether the tracker is up and running.
+		 */
+		void checkActive() throws IOException, ClassNotFoundException {
+			Message response = new Message(MessageType.ACTIVE);
+			response.status = listening;
 			sendData(response);
 		}
 
@@ -204,6 +242,9 @@ class Tracker {
 							break;
 						case DETAILS:
 							reply_details();
+							break;
+						case MessageType.ACTIVE:
+							checkActive();
 							break;
 
 						/* TODO: add more functionality here */

@@ -1,4 +1,6 @@
 import java.io.*; // TODO: get rid of wildcard imports in future
+import java.lang.Math;
+import java.lang.Thread;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +19,7 @@ class Peer {
 	Socket csocket;
 	List<File> sharedFiles;
 	String sharedDir;
+	int listeningPort;
 
 	/* tracker info */
 	String trackerHost;
@@ -27,6 +30,9 @@ class Peer {
 		this.trackerPort = trackerPort;
 		this.sharedFiles = new ArrayList<>();
 		this.sharedDir = sharedDir;
+		
+		/* random port between 10000 and 25000 */
+		this.listeningPort = (int) (Math.random() * (25000 - 10000) + 10000);
 	}
 
 	void getHelp() {
@@ -169,6 +175,7 @@ class Peer {
 		credentials.username = stdin.nextLine();
 		System.out.print("Enter your password: ");
 		credentials.password = stdin.nextLine(); // TODO: hide password
+		credentials.listeningPort = listeningPort;
 		sendData(credentials);
 		Message response = (Message) input.readObject();
 		if (response.status) {
@@ -303,6 +310,7 @@ class Peer {
 		running = true;
 		updateSharedFiles();
 		connect(trackerHost, trackerPort); // attempt connection on startup
+		new Thread(new PeerThread(this, listeningPort)).start(); /* TODO */
 		while (running) {
 			System.out.print("(h for help)> ");
 			String letter = stdin.nextLine();

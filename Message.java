@@ -10,6 +10,7 @@ class Message implements Serializable {
 	String password;
 	String tokenID;
 	String username;
+	int listeningPort;
 	ArrayList<String> sharedFilesNames;
 	ArrayList<ContactInfo> details;
 
