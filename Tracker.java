@@ -243,7 +243,7 @@ class Tracker {
 						case DETAILS:
 							reply_details();
 							break;
-						case MessageType.ACTIVE:
+						case ACTIVE:
 							checkActive();
 							break;
 
