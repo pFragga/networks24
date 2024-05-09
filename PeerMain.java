@@ -1,7 +1,7 @@
 class PeerMain {
 	public static void main(String[] args) {
 		if (args.length != 3) {
-			System.err.println("usage: [java] Peer <tracker host> <tracker port> <dir>");
+			System.err.println("usage: [java] PeerMain <tracker host> <tracker port> <dir>");
 			System.exit(1);
 		}
 
