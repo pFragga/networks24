@@ -155,8 +155,8 @@ class TrackerThread implements Runnable {
 			ArrayList<ContactInfo> details = new ArrayList<>();
 			for (String tokenID: tokenIDs) {
 				ContactInfo info = tracker.activePeers.get(tokenID);
-				//if (checkActive(info)) /* TODO */
-				details.add(tracker.activePeers.get(tokenID));
+				if (checkActive(info))
+					details.add(tracker.activePeers.get(tokenID));
 			}
 			response.details = new ArrayList<>(details);
 		} else {
