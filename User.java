@@ -4,7 +4,6 @@ class User {
 	int countDownloads;
 	int countFailures;
 
-	// Constructor
 	User(String username, String password) {
 		this.username = username;
 		this.password = password;
@@ -20,17 +19,14 @@ class User {
 		this.countFailures = countFailures;
 	}
 
-	// Method to increment countDownloads
 	void incrementCountDownloads() {
 		this.countDownloads++;
 	}
 
-	// Method to increment countFailures
 	void incrementCountFailures() {
 		this.countFailures++;
 	}
 
-	// Method to reset countDownloads and countFailures
 	synchronized void resetCounts() {
 		this.countDownloads = 0;
 		this.countFailures = 0;

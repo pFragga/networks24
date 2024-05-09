@@ -1,7 +1,13 @@
-import java.io.*; // TODO: get rid of wildcard imports in future
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.lang.Math;
 import java.lang.Thread;
-import java.net.*;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -20,6 +26,8 @@ class Peer {
 	List<File> sharedFiles;
 	String sharedDir;
 	int listeningPort;
+	ServerSocket serverSocket;
+	List<ContactInfo> knownPeers;
 
 	/* tracker info */
 	String trackerHost;
@@ -30,7 +38,8 @@ class Peer {
 		this.trackerPort = trackerPort;
 		this.sharedFiles = new ArrayList<>();
 		this.sharedDir = sharedDir;
-		
+		this.knownPeers = new ArrayList<>();
+
 		/* random port between 10000 and 25000 */
 		this.listeningPort = (int) (Math.random() * (25000 - 10000) + 10000);
 	}
@@ -44,7 +53,8 @@ class Peer {
 				"[l]\tlogin (requires connection)\n" +
 				"[L]\tlogout (requires connection)\n\n" +
 				"[ls]\tlist tracker's known files\n" +
-				"[Q]\tquery details about given file\n\n" +
+				"[Q]\tquery details about given file\n" +
+				"[ch]\tcheck if user is active\n\n" +
 				"[h]\tshow help info\n" +
 				"[q]\tquit (implies logout and disconnect)");
 	}
@@ -187,6 +197,72 @@ class Peer {
 		}
 	}
 
+	boolean checkActive() throws IOException, ClassNotFoundException {
+		Message request = new Message(MessageType.ACTIVE);
+		System.out.print("Ping tracker? [y/N] ");
+		String reply = stdin.nextLine();
+		if (reply.equals("y") || reply.equals("Y"))
+			return checkActiveTracker(request);
+		return checkActivePeer(request);
+	}
+
+	boolean checkActiveTracker(Message request) throws IOException, ClassNotFoundException {
+		if (!connected) {
+			System.out.println("You need to be connected first.");
+			return false;
+		}
+		System.out.print("Tracker status... ");
+		sendData(request);
+		Message response = (Message) input.readObject();
+		if (response.status) {
+			System.out.println("active.");
+		} else {
+			System.out.println("inactive.");
+		}
+		return response.status;
+	}
+
+	boolean checkActivePeer(Message request) throws IOException, ClassNotFoundException {
+		/* show known peers and select one */
+		if (knownPeers == null || knownPeers.isEmpty()) {
+			System.out.println("No known peers yet.");
+			return false;
+		}
+		System.out.println("Known Peers\n===========");
+		int i = 0;
+		for (i = 0; i < knownPeers.size(); ++i) {
+			System.out.println(i + ") " + knownPeers.get(i));
+		}
+		System.out.print("Who do you want to ping? [number] ");
+		i = Integer.parseInt(stdin.nextLine());
+
+		/* sanity check on user input */
+		if (i < 0 || i > 100)
+			return false;
+
+		/* establish connection to selected peer */
+		ContactInfo info = knownPeers.get(i);
+		System.out.print(info + " status... ");
+		Socket tmpSock = new Socket(info.getIP(), info.port);
+		ObjectInputStream in = new ObjectInputStream(tmpSock.getInputStream());
+		ObjectOutputStream out = new ObjectOutputStream(tmpSock.getOutputStream());
+		out.writeObject(request);
+		out.flush();
+		Message response = (Message) in.readObject();
+		if (response.status) {
+			System.out.println("active.");
+		} else {
+			System.out.println("inactive.");
+		}
+		
+		/* cleanup */
+		tmpSock.close();
+		in.close();
+		out.close();
+
+		return response.status;
+	}
+
 	void logout() throws IOException, ClassNotFoundException {
 		if (!connected) {
 			System.out.println("You are already not connected.");
@@ -235,19 +311,11 @@ class Peer {
 	}
 
 	void details() throws IOException, ClassNotFoundException {
-		if (!connected) {
-			System.out.println("You are already not connected.");
-			return;
-		}
-
-		if (tokenID == null || tokenID.isEmpty()) {
-			System.out.println("You have not yet logged in.");
-			return;
-		}
+		list();
 
 		sendData(new Message(MessageType.DETAILS));
 
-		System.out.print("Details for which file?: ");
+		System.out.print("Details for which file? [filename] ");
 		String filename = stdin.nextLine();
 		Message request = new Message(MessageType.DETAILS);
 		request.description = filename;
@@ -256,6 +324,7 @@ class Peer {
 		if (response.status) {
 			System.out.println(filename + "\n==========");
 			for (ContactInfo info: response.details) {
+				knownPeers.add(info);
 				System.out.println(info);
 			}
 		} else {
@@ -269,7 +338,7 @@ class Peer {
 			return;
 		}
 
-		sendData(new Message()); // GENERIC
+		sendData(new Message()); /* GENERIC */
 
 		String echoStr;
 		do {
@@ -306,11 +375,72 @@ class Peer {
 		}
 	}
 
+	void startServer() {
+		Thread receive = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					serverSocket = new ServerSocket(listeningPort, 20); // Use the listeningPort defined in your Peer class
+					while (running) {
+						Socket socket = serverSocket.accept();
+
+						// Handle each request in a new thread
+						new Thread(new Runnable() {
+							Socket socket;
+
+							public Runnable init(Socket socket) {
+								this.socket = socket;
+								return this;
+							}
+
+							@Override
+							public void run() {
+								try {
+									ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
+									ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
+
+									// Read the request type
+									Message request = (Message) in.readObject();
+									switch (request.type) {
+									case ACTIVE:
+										Message response = new Message(
+												running, /* status */
+												MessageType.ACTIVE
+												);
+										out.writeObject(response);
+										out.flush();
+										break;
+									case DOWNLOAD:
+										/* TODO */
+										break;
+									default:
+										System.err.println("received unknown message type");
+										break;
+									}
+
+									// Close streams and socket
+									out.close();
+									in.close();
+									socket.close();
+								} catch (IOException | ClassNotFoundException e) {
+									e.printStackTrace();
+								}
+							}
+						}.init(socket)).start();
+					}
+				} catch (IOException e) {
+					System.out.println("Server stopped receiving requests");
+				}
+			}
+		});
+		receive.start();
+	}
+
 	void begin() {
 		running = true;
 		updateSharedFiles();
 		connect(trackerHost, trackerPort); // attempt connection on startup
-		new Thread(new PeerThread(this, listeningPort)).start(); /* TODO */
+		startServer(); // Start the server to handle incoming requests
 		while (running) {
 			System.out.print("(h for help)> ");
 			String letter = stdin.nextLine();
@@ -348,9 +478,15 @@ class Peer {
 							logout();
 						if (connected)
 							disconnect();
+						if (!serverSocket.isClosed())
+							serverSocket.close();
 						running = false;
 						break;
+					case "ch":
+						checkActive();
+						break;
 					default:
+						break;
 				}
 			} catch (ClassNotFoundException e) {
 				e.printStackTrace();
@@ -363,4 +499,5 @@ class Peer {
 
 		stdin.close();
 	}
+
 }

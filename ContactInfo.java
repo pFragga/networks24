@@ -20,10 +20,14 @@ class ContactInfo implements Serializable {
 		this.countFailures = 0;
 	}
 
+	String getIP() {
+		return ipAddr.getHostAddress();
+	}
+
 	@Override
 	public String toString() {
 		return "{" + username + " [ID=" + tokenID + ",DL=" + countDownloads + ",FL="
-			+ countFailures + "] -> (" + ipAddr.getHostAddress() + ":" + port +
+			+ countFailures + "] -> (" + getIP() + ":" + port +
 			")}";
 	}
 }
