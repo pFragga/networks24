@@ -280,7 +280,7 @@ class Peer {
 			return;
 		}
 
-		sendData(new Message()); // GENERIC
+		sendData(new Message()); /* GENERIC */
 
 		String echoStr;
 		do {
@@ -322,7 +322,7 @@ class Peer {
 			public void run() {
 				try {
 					serverSocket = new ServerSocket(listeningPort, 20); // Use the listeningPort defined in your Peer class
-					while (true) {
+					while (running) {
 						Socket socket = serverSocket.accept();
 
 						// Handle each request in a new thread
@@ -337,17 +337,26 @@ class Peer {
 							@Override
 							public void run() {
 								try {
-									ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream());
-									ObjectInputStream input = new ObjectInputStream(socket.getInputStream());
+									ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
+									ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
 
 									// Read the request type
-									MessageType messageType = (MessageType) input.readObject();
-									System.out.println("Received a new request: " + messageType);
-
-									// Check if the request is for checking active status
-									if (messageType == MessageType.ACTIVE) {
-										String username = (String) input.readObject(); // Read the username from the client
-										checkActive(username, output); // Call the checkActive method
+									Message request = (Message) in.readObject();
+									switch (request.type) {
+									case ACTIVE:
+										Message response = new Message(
+												connected, /* status */
+												MessageType.ACTIVE
+												);
+										out.writeObject(response);
+										out.flush();
+										break;
+									case DOWNLOAD:
+										/* TODO */
+										break;
+									default:
+										System.err.println("received unknown message type");
+										break;
 									}
 
 									// Close streams and socket
@@ -411,9 +420,12 @@ class Peer {
 							logout();
 						if (connected)
 							disconnect();
+						if (!serverSocket.isClosed())
+							serverSocket.close();
 						running = false;
 						break;
 					default:
+						break;
 				}
 			} catch (ClassNotFoundException e) {
 				e.printStackTrace();
