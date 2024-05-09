@@ -108,7 +108,7 @@ class TrackerThread implements Runnable {
 						listeningPort,
 						tokenID,
 						username);
-				tracker.updateActivePeers(tokenID, info);
+				tracker.activatePeer(tokenID, info);
 				response.tokenID = tokenID;
 			} else {
 				response.description = "Invalid credentials.";
@@ -129,7 +129,7 @@ class TrackerThread implements Runnable {
 		String tokenID = identification.tokenID;
 		Message response = new Message(MessageType.LOGOUT);
 		if (response.status = tracker.activePeers.containsKey(tokenID)) {
-			tracker.updateActivePeers(tokenID);
+			tracker.deactivatePeer(tokenID);
 			tracker.updateFilenamesToTokenIDs(tokenID);
 		}
 		sendData(response);

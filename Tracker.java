@@ -36,20 +36,28 @@ class Tracker {
 		allFilenames.add(filename);
 	}
 
-	synchronized void updateActivePeers(String tokenID) {
+	synchronized void deactivatePeer(String tokenID) {
 		activePeers.remove(tokenID);
 	}
 
-	synchronized void updateActivePeers(String tokenID, ContactInfo info) {
+	synchronized void activatePeer(String tokenID, ContactInfo info) {
 		activePeers.put(tokenID, info);
 	}
 
+	/*
+	 * Unmaps given peer's tokenID from all mappings that contain it. Used
+	 * whenever a peer is wants to logout.
+	 */
 	synchronized void updateFilenamesToTokenIDs(String tokenID) {
 		for (Set<String> tokenIDs : filenamesToTokenIDs.values()) {
 			tokenIDs.remove(tokenID);
 		}
 	}
 
+	/*
+	 * Updates the filename->tokenID mappings by either appending to an already
+	 * existing mapping or creating a new one.
+	 */
 	synchronized void updateFilenamesToTokenIDs(String filename, String tokenID) {
 		Set<String> tokenIDs;
 		if (filenamesToTokenIDs.containsKey(filename)) {
