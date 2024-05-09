@@ -34,7 +34,7 @@ class TrackerThread implements Runnable {
 
 	/*
 	 * Always get the output stream first, instead of the input stream. If
-	 * you do, stdin freezes and you'll be stuck forever.
+	 * you do, input freezes and you'll be stuck forever.
 	 * TODO: fix the computer world.
 	 */
 	void getStreams() throws IOException {
