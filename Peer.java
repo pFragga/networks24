@@ -42,7 +42,6 @@ class Peer {
 
 		/* random port between 10000 and 25000 */
 		this.listeningPort = (int) (Math.random() * (25000 - 10000) + 10000);
-
 	}
 
 	void getHelp() {
@@ -54,10 +53,10 @@ class Peer {
 				"[l]\tlogin (requires connection)\n" +
 				"[L]\tlogout (requires connection)\n\n" +
 				"[ls]\tlist tracker's known files\n" +
-				"[Q]\tquery details about given file\n\n" +
+				"[Q]\tquery details about given file\n" +
+				"[ch]\tcheck if user is active\n\n" +
 				"[h]\tshow help info\n" +
-				"[q]\tquit (implies logout and disconnect)\n"+
-						"[ch]\tcheck if user is active");
+				"[q]\tquit (implies logout and disconnect)");
 	}
 
 	void connect(String host, int port) {
@@ -312,19 +311,11 @@ class Peer {
 	}
 
 	void details() throws IOException, ClassNotFoundException {
-		if (!connected) {
-			System.out.println("You are already not connected.");
-			return;
-		}
-
-		if (tokenID == null || tokenID.isEmpty()) {
-			System.out.println("You have not yet logged in.");
-			return;
-		}
+		list();
 
 		sendData(new Message(MessageType.DETAILS));
 
-		System.out.print("Details for which file?: ");
+		System.out.print("Details for which file? [filename] ");
 		String filename = stdin.nextLine();
 		Message request = new Message(MessageType.DETAILS);
 		request.description = filename;
@@ -383,6 +374,7 @@ class Peer {
 			System.err.println("Could not read fileDownloadList.txt");
 		}
 	}
+
 	void startServer() {
 		Thread receive = new Thread(new Runnable() {
 			@Override
@@ -449,7 +441,6 @@ class Peer {
 		updateSharedFiles();
 		connect(trackerHost, trackerPort); // attempt connection on startup
 		startServer(); // Start the server to handle incoming requests
-		/*new Thread(new PeerThread(this, listeningPort)).start();  TODO */
 		while (running) {
 			System.out.print("(h for help)> ");
 			String letter = stdin.nextLine();
