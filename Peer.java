@@ -361,7 +361,7 @@ class Peer {
 
 		/* if the file is already shared, don't bother */
 		File reqFile = new File(sharedDir, lastRequestedFilename);
-		if (reqFile.exists()) {
+		if (sharedFiles.contains(reqFile)) {
 			System.out.println(sharedDir + " already contains '" +
 					lastRequestedFilename + "'");
 			return true;
@@ -424,6 +424,11 @@ class Peer {
 			} else {
 				System.out.println(response.description);
 			}
+
+			/* cleanup */
+			tmpSock.close();
+			in.close();
+			out.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -514,7 +519,7 @@ class Peer {
 									return false;
 								}
 								response = new Message(MessageType.DOWNLOAD);
-								System.out.println(socket + ": requested " + filename);
+								System.out.println(socket + ": requested '" + filename + "'");
 								out.writeObject(response);
 								out.flush();
 
