@@ -1,5 +1,14 @@
 #!/bin/sh
 
-java -cp bin PeerMain "${1:-localhost}" "${2:-9090}" "${3:-shared_directory_1}"
+choose_shared_dir() {
+	ls | grep 'shared_directory' | shuf -n 1
+}
+
+if [ -z "$3" ]; then
+	dir=$(choose_shared_dir)
+	java -cp bin PeerMain "${1:-localhost}" "${2:-9090}" "$dir"
+else
+	java -cp bin PeerMain "${1:-localhost}" "${2:-9090}" "$3"
+fi
 
 exit $?
