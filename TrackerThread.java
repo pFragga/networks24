@@ -201,6 +201,16 @@ class TrackerThread implements Runnable {
 		sendData(response);
 	}
 
+	void handleNotify() throws IOException, ClassNotFoundException {
+		Message request = (Message) input.readObject();
+		if (request.status) {
+			tracker.activePeers.get(request.peer.tokenID).incrementCountDownloads();
+		} else {
+			tracker.activePeers.get(request.peer.tokenID).incrementCountFailures();
+		}
+		tracker.postUpdateDataStructures();
+	}
+
 	void handleConnection() throws IOException {
 		try {
 			while (!csocket.isClosed()) {
@@ -227,9 +237,12 @@ class TrackerThread implements Runnable {
 					case ACTIVE:
 						checkActive();
 						break;
-
-						/* TODO: add more functionality here */
-
+					case NOTIFY:
+						handleNotify();
+						break;
+					case INFORM:
+						inform();
+						break;
 					default:
 						break;
 				}

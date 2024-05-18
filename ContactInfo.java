@@ -24,6 +24,14 @@ class ContactInfo implements Serializable {
 		return ipAddr.getHostAddress();
 	}
 
+	synchronized void incrementCountDownloads() {
+		this.countDownloads++;
+	}
+
+	synchronized void incrementCountFailures() {
+		this.countFailures++;
+	}
+
 	@Override
 	public String toString() {
 		return "{" + username + " [ID=" + tokenID + ",DL=" + countDownloads + ",FL="
