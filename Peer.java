@@ -29,7 +29,6 @@ class Peer {
 	String sharedDir;
 	int listeningPort;
 	ServerSocket serverSocket;
-	List<ContactInfo> knownPeers;
 
 	/* tracker info */
 	String trackerHost;
@@ -40,7 +39,6 @@ class Peer {
 		this.trackerPort = trackerPort;
 		this.sharedFiles = new ArrayList<>();
 		this.sharedDir = sharedDir;
-		this.knownPeers = new ArrayList<>();
 
 		/* random port between 10000 and 25000 */
 		this.listeningPort = (int) (Math.random() * (25000 - 10000) + 10000);
@@ -199,22 +197,50 @@ class Peer {
 		}
 	}
 
+	/*
+	 * Show a menu of known peers and prompt the user to select one. Return
+	 * the corresponding ContactInfo entry in peers.
+	 */
+	ContactInfo selectPeer(List<ContactInfo> peers, String prompt) {
+		if (peers == null || peers.isEmpty())
+			return null;
+
+		System.out.println("Known Peers\n===========");
+		for (int i = 0; i < peers.size(); ++i) {
+			System.out.println(i + ") " + peers.get(i));
+		}
+		System.out.print(prompt);
+		int choice = Integer.parseInt(stdin.nextLine());
+
+		/* sanity check */
+		if (choice < 0 || choice > 100) {
+			System.out.println("Invalid selection");
+			return null;
+		}
+
+		return peers.get(choice);
+	}
+
 	boolean checkActive() throws IOException, ClassNotFoundException {
-		Message request = new Message(MessageType.ACTIVE);
 		System.out.print("Ping tracker? [y/N] ");
 		String reply = stdin.nextLine();
 		if (reply.equals("y") || reply.equals("Y"))
-			return checkActiveTracker(request);
-		return checkActivePeer(request);
+			return checkActiveTracker();
+
+		List<ContactInfo> peers = details();
+		ContactInfo selected = selectPeer(peers, "Who do you want to ping? ");
+		if (peers == null || selected == null)
+			return false;
+		return checkActivePeer(selected);
 	}
 
-	boolean checkActiveTracker(Message request) throws IOException, ClassNotFoundException {
+	boolean checkActiveTracker() throws IOException, ClassNotFoundException {
 		if (!connected) {
 			System.out.println("You need to be connected first.");
 			return false;
 		}
 		System.out.print("Tracker status... ");
-		sendData(request);
+		sendData(new Message(MessageType.ACTIVE));
 		Message response = (Message) input.readObject();
 		if (response.status) {
 			System.out.println("active.");
@@ -224,28 +250,12 @@ class Peer {
 		return response.status;
 	}
 
-	boolean checkActivePeer(Message request) throws IOException, ClassNotFoundException {
-		/* show known peers and select one */
-		if (knownPeers == null || knownPeers.isEmpty()) {
-			System.out.println("No known peers yet.");
-			return false;
-		}
-		System.out.println("Known Peers\n===========");
-		int i = 0;
-		for (i = 0; i < knownPeers.size(); ++i) {
-			System.out.println(i + ") " + knownPeers.get(i));
-		}
-		System.out.print("Who do you want to ping? [number] ");
-		i = Integer.parseInt(stdin.nextLine());
-
-		/* sanity check on user input */
-		if (i < 0 || i > 100)
-			return false;
+	boolean checkActivePeer(ContactInfo peer) throws IOException, ClassNotFoundException {
+		Message request = new Message(MessageType.ACTIVE);
 
 		/* establish connection to selected peer */
-		ContactInfo info = knownPeers.get(i);
-		System.out.print(info + " status... ");
-		Socket tmpSock = new Socket(info.getIP(), info.port);
+		System.out.print("Checking status for " + peer.username + "...");
+		Socket tmpSock = new Socket(peer.getIP(), peer.port);
 		ObjectInputStream in = new ObjectInputStream(tmpSock.getInputStream());
 		ObjectOutputStream out = new ObjectOutputStream(tmpSock.getOutputStream());
 		out.writeObject(request);
@@ -312,12 +322,12 @@ class Peer {
 		}
 	}
 
-	void details() throws IOException, ClassNotFoundException {
+	List<ContactInfo> details() throws IOException, ClassNotFoundException {
 		list();
 
 		sendData(new Message(MessageType.DETAILS));
 
-		System.out.print("Details for which file? [filename] ");
+		System.out.print("Which one? [filename] ");
 		String filename = stdin.nextLine();
 		Message request = new Message(MessageType.DETAILS);
 		request.description = filename;
@@ -325,13 +335,12 @@ class Peer {
 		Message response = (Message) input.readObject();
 		if (response.status) {
 			System.out.println(filename + "\n==========");
-			for (ContactInfo info: response.details) {
-				knownPeers.add(info);
+			for (ContactInfo info: response.details)
 				System.out.println(info);
-			}
 		} else {
 			System.out.println(response.description);
 		}
+		return response.details; /* null, when negative response */
 	}
 
 	void echo() throws IOException, ClassNotFoundException {
