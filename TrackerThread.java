@@ -119,9 +119,10 @@ class TrackerThread implements Runnable {
 		sendData(response);
 
 		/* if peer could not login, no reason to inform */
-		if (response.status)
+		if (response.status) {
 			inform();
-		tracker.postUpdateDataStructures();
+			tracker.postUpdateDataStructures();
+		}
 	}
 
 	void logout() throws IOException, ClassNotFoundException {
@@ -223,13 +224,14 @@ class TrackerThread implements Runnable {
 					case DETAILS:
 						reply_details();
 						break;
-					case MessageType.ACTIVE:
+					case ACTIVE:
 						checkActive();
 						break;
 
 						/* TODO: add more functionality here */
 
 					default:
+						break;
 				}
 			}
 		} catch (ClassNotFoundException e) {
