@@ -1,7 +1,9 @@
 import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -10,6 +12,8 @@ import java.lang.Math;
 import java.lang.Thread;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -29,6 +33,7 @@ class Peer {
 	String sharedDir;
 	int listeningPort;
 	ServerSocket serverSocket;
+	String lastRequestedFilename;
 
 	/* tracker info */
 	String trackerHost;
@@ -54,6 +59,7 @@ class Peer {
 				"[L]\tlogout (requires connection)\n\n" +
 				"[ls]\tlist tracker's known files\n" +
 				"[Q]\tquery details about given file\n" +
+				"[D]\tdownload given file\n" +
 				"[ch]\tcheck if user is active\n\n" +
 				"[h]\tshow help info\n" +
 				"[q]\tquit (implies logout and disconnect)");
@@ -337,10 +343,93 @@ class Peer {
 			System.out.println(filename + "\n==========");
 			for (ContactInfo info: response.details)
 				System.out.println(info);
+			lastRequestedFilename = filename;
 		} else {
 			System.out.println(response.description);
 		}
 		return response.details; /* null, when negative response */
+	}
+
+	/*
+	 * After getting details for the specified file, compute the peer for the
+	 * optimal download, then request the file from that peer.
+	 */
+	boolean simpleDownload() throws IOException, ClassNotFoundException {
+		List<ContactInfo> peers = details();
+		if (peers == null || peers.isEmpty())
+			return false;
+
+		/* if the file is already shared, don't bother */
+		File reqFile = new File(sharedDir, lastRequestedFilename);
+		if (reqFile.exists()) {
+			System.out.println(sharedDir + " already contains '" +
+					lastRequestedFilename + "'");
+			return true;
+		}
+
+		/*
+		 * Measure response times for each peer returned from calling details.
+		 * Active peers get scored according to their downloads and failures
+		 * counts.
+		 *
+		 * TODO: need to keep all scores (sorted in ascending order)
+		 */
+		double bestScore = Double.MAX_VALUE;
+		ContactInfo bestPeer = peers.get(0);
+		for (int i = 0; i < peers.size(); ++i) {
+			ContactInfo peer = peers.get(i);
+			Instant start = Instant.now();
+			boolean active = checkActivePeer(peer);
+			Instant finish = Instant.now();
+			if (active) {
+				double score =
+					(double) Duration.between(start, finish).toMillis() *
+					Math.pow(.75d, peer.countDownloads) *
+					Math.pow(1.25d, peer.countFailures);
+				if (score < bestScore) {
+					bestScore = score;
+					bestPeer = peer;
+				}
+				System.out.println(peer.username + " = " + score +
+						" (current best = " + bestScore + ")");
+			}
+		}
+
+		/* establish connection to optimal peer */
+		try {
+			System.out.println("Establishing connection to " + bestPeer.username + "...");
+			Socket tmpSock = new Socket(bestPeer.getIP(), bestPeer.port);
+			ObjectInputStream in = new
+				ObjectInputStream(tmpSock.getInputStream());
+			ObjectOutputStream out = new
+				ObjectOutputStream(tmpSock.getOutputStream());
+			Message request = new Message(MessageType.DOWNLOAD);
+			request.description = lastRequestedFilename;
+			out.writeObject(request);
+			out.flush();
+			Message response = (Message) in.readObject();
+			if (response.status) {
+				/* read the file in 4K byte chunks */
+				BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(reqFile));
+				int bytesRead;
+				byte[] bytes = new byte[4096];
+				while ((bytesRead = in.read(bytes, 0, bytes.length)) > 0)
+					bos.write(bytes, 0, bytesRead);
+				bos.close();
+				System.out.println("Received '" + lastRequestedFilename +
+						"' from peer: " + bestPeer.username);
+
+				/* TODO: notify tracker and update counters */
+				return true;
+			} else {
+				System.out.println(response.description);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		/* if all hope is lost... */
+		return false;
 	}
 
 	void echo() throws IOException, ClassNotFoundException {
@@ -373,7 +462,7 @@ class Peer {
 		try (
 			BufferedReader reader = new BufferedReader(new FileReader("fileDownloadList.txt"));
 			) {
-			System.out.print("Updating shared files... ");
+			System.out.print("Updating shared files (" + sharedDir + ")... ");
 			String filename;
 			while ((filename = reader.readLine()) != null) {
 				File currFile = new File(sharedDir, filename);
@@ -515,6 +604,9 @@ class Peer {
 						break;
 					case "Q": // Q, as in Query
 						details();
+						break;
+					case "D":
+						simpleDownload();
 						break;
 					case "h":
 						getHelp();
