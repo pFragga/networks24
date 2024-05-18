@@ -14,6 +14,9 @@ class Message implements Serializable {
 	ArrayList<String> sharedFilesNames;
 	ArrayList<ContactInfo> details;
 
+	/* the peer who successfully sent a file upon a download request */
+	ContactInfo peer;
+
 	/* this is the default message */
 	Message() {
 		this.status = true;

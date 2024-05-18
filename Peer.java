@@ -351,6 +351,22 @@ class Peer {
 	}
 
 	/*
+	 * Informs the tracker about new shared files and increments the tracker's
+	 * download/failure counters for the specified peer, according to whether
+	 * or not them sending a file was successful.
+	 */
+	void notifyTracker(ContactInfo peer, boolean success) throws IOException, ClassNotFoundException {
+		sendData(new Message(MessageType.INFORM));
+		inform();
+
+		sendData(new Message(MessageType.NOTIFY));
+		Message notification = new Message(success, MessageType.NOTIFY);
+		notification.peer = peer;
+		notification.tokenID = tokenID;
+		sendData(notification);
+	}
+
+	/*
 	 * After getting details for the specified file, compute the peer for the
 	 * optimal download, then request the file from that peer.
 	 */
@@ -396,6 +412,7 @@ class Peer {
 		}
 
 		/* establish connection to optimal peer */
+		boolean success = false;
 		try {
 			System.out.println("Establishing connection to " + bestPeer.username + "...");
 			Socket tmpSock = new Socket(bestPeer.getIP(), bestPeer.port);
@@ -418,18 +435,18 @@ class Peer {
 				bos.close();
 				System.out.println("Received '" + lastRequestedFilename +
 						"' from peer: " + bestPeer.username);
-
-				/* TODO: notify tracker and update counters */
-				return true;
+				success = true;
 			} else {
-				System.out.println(response.description);
+				success = false;
+				System.out.println(tmpSock + ": " + response.description);
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 
-		/* if all hope is lost... */
-		return false;
+		/* updateSharedFiles gets called in here */
+		notifyTracker(bestPeer, success);
+		return success;
 	}
 
 	void echo() throws IOException, ClassNotFoundException {
