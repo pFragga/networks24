@@ -1,7 +1,8 @@
 import java.io.Serializable;
+import java.lang.Comparable;
 import java.net.InetAddress;
 
-class ContactInfo implements Serializable {
+class ContactInfo implements Serializable, Comparable<ContactInfo> {
 	private static final long serialVersionUID = 43L; // IGNORE
 
 	InetAddress ipAddr;
@@ -10,6 +11,7 @@ class ContactInfo implements Serializable {
 	int port;
 	String tokenID;
 	String username;
+	double score;
 
 	ContactInfo(InetAddress ipAddr, int port, String tokenID, String username) {
 		this.ipAddr = ipAddr;
@@ -18,10 +20,18 @@ class ContactInfo implements Serializable {
 		this.username = username;
 		this.countDownloads = 0;
 		this.countFailures = 0;
+		this.score = 0.0d;
 	}
 
 	String getIP() {
 		return ipAddr.getHostAddress();
+	}
+
+	@Override
+	public int compareTo(ContactInfo other) {
+		if (this.score > other.score)
+			return 1;
+		return -1;
 	}
 
 	@Override

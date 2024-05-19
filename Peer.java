@@ -15,6 +15,7 @@ import java.net.Socket;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Scanner;
 
@@ -369,6 +370,31 @@ class Peer {
 	}
 
 	/*
+	 * Measure response times for each peer by measuring how long they take
+	 * to respond to a checkActive call. Active peers get scored according
+	 * to their downloads and failures counts.
+	 */
+	List<ContactInfo> scorePeers(List<ContactInfo> peers) throws IOException, ClassNotFoundException {
+		for (int i = 0; i < peers.size(); ++i) {
+			ContactInfo peer = peers.get(i);
+			Instant start = Instant.now();
+			boolean active = checkActivePeer(peer);
+			Instant finish = Instant.now();
+			if (active) {
+				peer.score =
+					(double) Duration.between(start, finish).toMillis() *
+					Math.pow(.75d, peer.countDownloads) *
+					Math.pow(1.25d, peer.countFailures);
+				System.out.println("Peer " + peer.username + " scored " + peer.score);
+			} else {
+				peers.remove(peer);
+			}
+		}
+		Collections.sort(peers);
+		return peers;
+	}
+
+	/*
 	 * After getting details for the specified file, compute the peer for the
 	 * optimal download, then request the file from that peer.
 	 */
@@ -379,52 +405,35 @@ class Peer {
 
 		/* if the file is already shared, don't bother */
 		File reqFile = new File(sharedDir, lastRequestedFilename);
-		if (sharedFiles.contains(reqFile)) {
-			System.out.println(sharedDir + " already contains '" +
-					lastRequestedFilename + "'");
-			return true;
+		//if (sharedFiles.contains(reqFile)) {
+		//	System.out.println(sharedDir + " already contains '" +
+		//			lastRequestedFilename + "'");
+		//	return true;
+		//}
+
+		peers = scorePeers(peers);
+		if (peers.isEmpty()) {
+			System.out.println("No active peers were left");
+			return false;
 		}
 
-		/*
-		 * Measure response times for each peer returned from calling details.
-		 * Active peers get scored according to their downloads and failures
-		 * counts.
-		 *
-		 * TODO: need to keep all scores (sorted in ascending order)
-		 */
-		double bestScore = Double.MAX_VALUE;
-		ContactInfo bestPeer = peers.get(0);
+		boolean success = false;
 		for (int i = 0; i < peers.size(); ++i) {
-			ContactInfo peer = peers.get(i);
-			Instant start = Instant.now();
-			boolean active = checkActivePeer(peer);
-			Instant finish = Instant.now();
-			if (active) {
-				double score =
-					(double) Duration.between(start, finish).toMillis() *
-					Math.pow(.75d, peer.countDownloads) *
-					Math.pow(1.25d, peer.countFailures);
-				if (score < bestScore) {
-					bestScore = score;
-					bestPeer = peer;
-				}
-				System.out.println(peer.username + " = " + score +
-						" (current best = " + bestScore + ")");
-			}
-		}
-
-		/* establish connection to optimal peer */
-		try {
+			ContactInfo bestPeer = peers.get(i);
 			System.out.println("Establishing connection to " + bestPeer.username + "...");
 			Socket tmpSock = new Socket(bestPeer.getIP(), bestPeer.port);
 			ObjectInputStream in = new
 				ObjectInputStream(tmpSock.getInputStream());
 			ObjectOutputStream out = new
 				ObjectOutputStream(tmpSock.getOutputStream());
+
+			/* request the file */
 			Message request = new Message(MessageType.DOWNLOAD);
 			request.description = lastRequestedFilename;
 			out.writeObject(request);
 			out.flush();
+
+			/* handle response */
 			Message response = (Message) in.readObject();
 			if (response.status) {
 				/* read the file in 4K byte chunks */
@@ -438,21 +447,22 @@ class Peer {
 						"' from peer: " + bestPeer.username);
 
 				/* TODO: notify tracker and update counters */
-				return true;
+				success = true;
 			} else {
 				System.out.println(response.description);
+				success = false;
 			}
 
 			/* cleanup */
 			tmpSock.close();
 			in.close();
 			out.close();
-		} catch (IOException e) {
-			e.printStackTrace();
+
+			if (success)
+				break;
 		}
 
-		/* if all hope is lost... */
-		return false;
+		return success;
 	}
 
 	void echo() throws IOException, ClassNotFoundException {
