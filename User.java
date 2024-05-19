@@ -19,11 +19,11 @@ class User {
 		this.countFailures = countFailures;
 	}
 
-	void incrementCountDownloads() {
+	synchronized void incrementCountDownloads() {
 		this.countDownloads++;
 	}
 
-	void incrementCountFailures() {
+	synchronized void incrementCountFailures() {
 		this.countFailures++;
 	}
 

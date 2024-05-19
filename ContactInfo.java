@@ -27,6 +27,14 @@ class ContactInfo implements Serializable, Comparable<ContactInfo> {
 		return ipAddr.getHostAddress();
 	}
 
+	synchronized void incrementCountDownloads() {
+		this.countDownloads++;
+	}
+
+	synchronized void incrementCountFailures() {
+		this.countFailures++;
+	}
+
 	@Override
 	public int compareTo(ContactInfo other) {
 		if (this.score > other.score)

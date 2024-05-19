@@ -445,11 +445,9 @@ class Peer {
 				bos.close();
 				System.out.println("Received '" + lastRequestedFilename +
 						"' from peer: " + bestPeer.username);
-
-				/* TODO: notify tracker and update counters */
 				success = true;
 			} else {
-				System.out.println(response.description);
+				System.out.println(tmpSock + ": " + response.description);
 				success = false;
 			}
 
@@ -462,6 +460,8 @@ class Peer {
 				break;
 		}
 
+		/* updateSharedFiles gets called in here */
+		notifyTracker(bestPeer, success);
 		return success;
 	}
 
