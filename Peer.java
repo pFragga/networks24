@@ -120,7 +120,7 @@ class Peer {
 			return;
 		}
 
-		if (registered) {
+		if (registered && (tokenID != null && !tokenID.isEmpty())) {
 			System.out.println("You need to logout first.");
 			return;
 		}
@@ -245,8 +245,15 @@ class Peer {
 			System.out.println("You need to be connected first.");
 			return false;
 		}
+
 		System.out.print("Tracker status... ");
-		sendData(new Message(MessageType.ACTIVE));
+		try {
+			sendData(new Message(MessageType.ACTIVE));
+		} catch (IOException e) {
+			System.out.println("inactive.");
+			return false;
+		}
+
 		Message response = (Message) input.readObject();
 		if (response.status) {
 			System.out.println("active.");
@@ -258,10 +265,21 @@ class Peer {
 
 	boolean checkActivePeer(ContactInfo peer) throws IOException, ClassNotFoundException {
 		Message request = new Message(MessageType.ACTIVE);
+		System.out.print("Checking status for " + peer.username + "...");
+
+		/*
+		 * If we get IOException when opening the socket, that means the peer
+		 * is definitely inactive and we can early return.
+		 */
+		Socket tmpSock;
+		try {
+			tmpSock = new Socket(peer.getIP(), peer.port);
+		} catch (IOException e) {
+			System.out.println("inactive.");
+			return false;
+		}
 
 		/* establish connection to selected peer */
-		System.out.print("Checking status for " + peer.username + "...");
-		Socket tmpSock = new Socket(peer.getIP(), peer.port);
 		ObjectInputStream in = new ObjectInputStream(tmpSock.getInputStream());
 		ObjectOutputStream out = new ObjectOutputStream(tmpSock.getOutputStream());
 		out.writeObject(request);

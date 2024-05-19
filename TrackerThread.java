@@ -167,14 +167,26 @@ class TrackerThread implements Runnable {
 	}
 
 	/*
-	 * Checks if the host provided in the contact info is listening for
+	 * Checks if the peer provided in the contact info is listening for
 	 * connections, by opening a new socket and new i/o streams.
 	 */
 	boolean checkActive(ContactInfo info) throws IOException, ClassNotFoundException {
 		if (info == null)
 			return false;
-		Socket sock = new Socket(info.ipAddr.getHostAddress(), info.port);
 		System.out.print("Checking activity for " + info + "...");
+
+		/*
+		 * If we get IOException when opening the socket, that means the peer
+		 * is definitely inactive and we can early return.
+		 */
+		Socket sock;
+		try {
+			sock = new Socket(info.ipAddr.getHostAddress(), info.port);
+		} catch (IOException e) {
+			System.err.println("NOT OK");
+			return false;
+		}
+
 		ObjectInputStream in = new ObjectInputStream(
 				sock.getInputStream());
 		ObjectOutputStream out = new ObjectOutputStream(
