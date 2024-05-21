@@ -4,7 +4,7 @@ import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -18,10 +18,9 @@ class Tracker {
 	Map<String, Set<String>> filenamesToTokenIDs;
 
 	Tracker() {
-		registeredPeersInfo = new HashMap<>();
-		activePeers = new HashMap<>();
-		allFilenames = new HashSet<>();
-		filenamesToTokenIDs = new HashMap<>();
+		registeredPeersInfo = new ConcurrentHashMap<>();
+		activePeers = new ConcurrentHashMap<>();
+		filenamesToTokenIDs = new ConcurrentHashMap<>();
 	}
 
 	void postUpdateDataStructures() {
