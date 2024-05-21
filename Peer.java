@@ -418,11 +418,11 @@ class Peer {
 
 		/* if the file is already shared, don't bother */
 		File reqFile = new File(sharedDir, lastRequestedFilename);
-		//if (sharedFiles.contains(reqFile)) {
-		//	System.out.println(sharedDir + " already contains '" +
-		//			lastRequestedFilename + "'");
-		//	return true;
-		//}
+		if (sharedFiles.contains(reqFile)) {
+			System.out.println(sharedDir + " already contains '" +
+					lastRequestedFilename + "'");
+			return true;
+		}
 
 		peers = scorePeers(peers);
 		if (peers.isEmpty()) {
