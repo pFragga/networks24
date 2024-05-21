@@ -1,8 +1,6 @@
-import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
@@ -32,22 +30,21 @@ class Peer {
 	Socket csocket;
 	List<File> sharedFiles;
 	String sharedDir;
-	int listeningPort;
-	ServerSocket serverSocket;
 	String lastRequestedFilename;
 
+	/* server tracker's and other peers' activity and download requests */
+	PeerServer peerServer;
+
 	/* tracker info */
-	String trackerHost;
 	int trackerPort;
+	String trackerHost;
 
 	Peer(String trackerHost, int trackerPort, String sharedDir) {
 		this.trackerHost = trackerHost;
 		this.trackerPort = trackerPort;
 		this.sharedFiles = new ArrayList<>();
 		this.sharedDir = sharedDir;
-
-		/* random port between 10000 and 25000 */
-		this.listeningPort = (int) (Math.random() * (25000 - 10000) + 10000);
+		peerServer = new PeerServer(this);
 	}
 
 	void getHelp() {
@@ -192,7 +189,7 @@ class Peer {
 		credentials.username = stdin.nextLine();
 		System.out.print("Enter your password: ");
 		credentials.password = stdin.nextLine(); // TODO: hide password
-		credentials.listeningPort = listeningPort;
+		credentials.listeningPort = peerServer.listeningPort;
 		sendData(credentials);
 		Message response = (Message) input.readObject();
 		if (response.status) {
@@ -516,107 +513,11 @@ class Peer {
 		}
 	}
 
-	void startServer() {
-		Thread receive = new Thread(new Runnable() {
-			@Override
-			public void run() {
-				try {
-					serverSocket = new ServerSocket(listeningPort, 20); // Use the listeningPort defined in your Peer class
-					while (running) {
-						Socket socket = serverSocket.accept();
-
-						// Handle each request in a new thread
-						new Thread(new Runnable() {
-							Socket socket;
-							ObjectOutputStream out;
-							ObjectInputStream in;
-
-							public Runnable init(Socket socket) {
-								this.socket = socket;
-								return this;
-							}
-
-							boolean handleSimpleDownload(Message request) throws IOException {
-								String filename = request.description;
-								File f = new File(sharedDir, filename);
-								long flength = f.length();
-
-								/*
-								 * check if we can actually send the file, then
-								 * inform the requesting peer
-								 */
-								Message response;
-								if (!f.exists() || flength > Integer.MAX_VALUE) {
-									response = new Message(false, MessageType.DOWNLOAD);
-									response.description = "Could not send '" + filename + "' to " + socket;
-									System.out.println(response.description);
-									out.writeObject(response);
-									out.flush();
-									return false;
-								}
-								response = new Message(MessageType.DOWNLOAD);
-								System.out.println(socket + ": requested '" + filename + "'");
-								out.writeObject(response);
-								out.flush();
-
-								byte[] bytes = new byte[(int) flength];
-								BufferedInputStream bis = new
-									BufferedInputStream(new FileInputStream(f));
-								bis.read(bytes, 0, bytes.length);
-								out.write(bytes, 0, bytes.length);
-								out.flush();
-								bis.close();
-								System.out.println("Sent '" + filename + "' to " + socket);
-								return true; /* TODO */
-							}
-
-							@Override
-							public void run() {
-								try {
-									out = new ObjectOutputStream(socket.getOutputStream());
-									in = new ObjectInputStream(socket.getInputStream());
-									// Read the request type
-									Message request = (Message) in.readObject();
-									switch (request.type) {
-									case ACTIVE:
-										Message response = new Message(
-												running, /* status */
-												MessageType.ACTIVE
-												);
-										out.writeObject(response);
-										out.flush();
-										break;
-									case DOWNLOAD:
-										handleSimpleDownload(request);
-										break;
-									default:
-										System.err.println("received unknown message type");
-										break;
-									}
-
-									// Close streams and socket
-									out.close();
-									in.close();
-									socket.close();
-								} catch (IOException | ClassNotFoundException e) {
-									e.printStackTrace();
-								}
-							}
-						}.init(socket)).start();
-					}
-				} catch (IOException e) {
-					System.out.println("Server stopped receiving requests");
-				}
-			}
-		});
-		receive.start();
-	}
-
 	void begin() {
 		running = true;
 		updateSharedFiles();
-		connect(trackerHost, trackerPort); // attempt connection on startup
-		startServer(); // Start the server to handle incoming requests
+		connect(trackerHost, trackerPort); /* attempt connection on startup */
+		new Thread(peerServer).start();
 		while (running) {
 			System.out.print("(h for help)> ");
 			String letter = stdin.nextLine();
@@ -657,8 +558,8 @@ class Peer {
 							logout();
 						if (connected)
 							disconnect();
-						if (!serverSocket.isClosed())
-							serverSocket.close();
+						if (!peerServer.ssocket.isClosed())
+							peerServer.ssocket.close();
 						running = false;
 						break;
 					case "ch":
