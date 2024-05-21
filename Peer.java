@@ -54,7 +54,6 @@ class Peer {
 		System.out.println(
 				"[c]\tconnect to tracker\n" +
 				"[d]\tdisconnect from tracker\n\n" +
-				"[e]\techo server (useful for debugging)\n\n" +
 				"[r]\tregister (requires connection)\n" +
 				"[l]\tlogin (requires connection)\n" +
 				"[L]\tlogout (requires connection)\n\n" +
@@ -62,6 +61,7 @@ class Peer {
 				"[Q]\tquery details about given file\n" +
 				"[D]\tdownload given file\n" +
 				"[ch]\tcheck if user is active\n\n" +
+				"[?]\tlist files in your shared directory\n" +
 				"[h]\tshow help info\n" +
 				"[q]\tquit (implies logout and disconnect)");
 	}
@@ -483,24 +483,14 @@ class Peer {
 		return success;
 	}
 
-	void echo() throws IOException, ClassNotFoundException {
-		if (!connected) {
-			System.out.println("You need to be connected first.");
-			return;
+	void listSharedDir() {
+		try {
+			File dir = new File(sharedDir);
+			for (String filename: dir.list())
+				System.out.println(filename);
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
-
-		sendData(new Message()); /* GENERIC */
-
-		String echoStr;
-		do {
-			System.out.print("CLIENT ECHO: ");
-			echoStr = stdin.nextLine();
-			Message clientEcho = new Message();
-			clientEcho.description = echoStr;
-			sendData(clientEcho);
-			Message serverEcho = (Message) input.readObject();
-			System.out.println("SERVER ECHO: " + serverEcho.description);
-		} while (echoStr != null && !echoStr.equals("END"));
 	}
 
 	/*
@@ -638,9 +628,6 @@ class Peer {
 					case "d":
 						disconnect();
 						break;
-					case "e":
-						echo();
-						break;
 					case "r":
 						register();
 						break;
@@ -658,6 +645,9 @@ class Peer {
 						break;
 					case "D":
 						simpleDownload();
+						break;
+					case "?":
+						listSharedDir();
 						break;
 					case "h":
 						getHelp();

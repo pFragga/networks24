@@ -48,20 +48,6 @@ class TrackerThread implements Runnable {
 		output.flush();
 	}
 
-	/*
-	 * I wrote this echo functionality for testing/debugging when I was
-	 * rethinking things. It's not required by any other method.
-	 */
-	void echo() throws IOException, ClassNotFoundException {
-		Message clientEcho;
-		do {
-			clientEcho = (Message) input.readObject();
-			System.out.println(csocket + " ECHO: " + clientEcho.description);
-			sendData(clientEcho); // ECHO Protocol
-		} while (clientEcho.description != null && !clientEcho.description.equals("END"));
-		System.out.println(csocket + " Client quit.");
-	}
-
 	void register() throws IOException, ClassNotFoundException {
 		Message registration = (Message) input.readObject();
 		String username = registration.username;
@@ -236,9 +222,6 @@ class TrackerThread implements Runnable {
 						break;
 					case LOGOUT:
 						logout();
-						break;
-					case GENERIC:
-						echo();
 						break;
 					case LIST:
 						reply_list();
