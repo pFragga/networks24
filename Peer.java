@@ -473,12 +473,13 @@ class Peer {
 			in.close();
 			out.close();
 
+			/* updateSharedFiles gets called in here */
+			notifyTracker(bestPeer, success);
+
 			if (success)
 				break;
 		}
 
-		/* updateSharedFiles gets called in here */
-		notifyTracker(peers.get(i), success);
 		return success;
 	}
 
