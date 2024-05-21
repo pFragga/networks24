@@ -125,9 +125,9 @@ class TrackerThread implements Runnable {
 
 	void reply_list() throws IOException, ClassNotFoundException {
 		Message response = new Message(MessageType.LIST);
-		if (response.status = !tracker.allFilenames.isEmpty()) {
+		if (response.status = !tracker.filenamesToTokenIDs.keySet().isEmpty()) {
 			response.description = "";
-			for (String filename: tracker.allFilenames)
+			for (String filename: tracker.filenamesToTokenIDs.keySet())
 				response.description += filename + "\n";
 		}
 		sendData(response);

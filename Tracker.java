@@ -15,7 +15,6 @@ class Tracker {
 	ServerSocket ssocket;
 	Map<String, User> registeredPeersInfo;
 	Map<String, ContactInfo> activePeers;
-	Set<String> allFilenames;
 	Map<String, Set<String>> filenamesToTokenIDs;
 
 	Tracker() {
@@ -28,12 +27,7 @@ class Tracker {
 	void postUpdateDataStructures() {
 		System.out.println("UPDATED DATA STRUCTURES:\n" +
 				"activePeers = " + activePeers + "\n" +
-				"allFilenames = " + allFilenames + "\n" +
 				"filenamesToTokenIDs = " + filenamesToTokenIDs);
-	}
-
-	synchronized void updateAllFilenames(String filename) {
-		allFilenames.add(filename);
 	}
 
 	synchronized void deactivatePeer(String tokenID) {
