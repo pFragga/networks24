@@ -56,8 +56,8 @@ class Peer {
 				"[L]\tlogout (requires connection)\n\n" +
 				"[ls]\tlist tracker's known files\n" +
 				"[Q]\tquery details about given file\n" +
+				"[ch]\tcheck if the tracker (or a peer) is active\n\n" +
 				"[D]\tdownload given file\n" +
-				"[ch]\tcheck if user is active\n\n" +
 				"[?]\tlist files in your shared directory\n" +
 				"[h]\tshow help info\n" +
 				"[q]\tquit (implies logout and disconnect)");
@@ -315,7 +315,7 @@ class Peer {
 		sendData(identification);
 		Message response = (Message) input.readObject();
 		if (response.status) {
-			tokenID = "";
+			tokenID = null;
 			System.out.println("Logout successful.");
 		} else {
 			System.out.print("Logout failed. Reason: " + response.description);
@@ -544,6 +544,9 @@ class Peer {
 					case "Q": // Q, as in Query
 						details();
 						break;
+					case "ch":
+						checkActive();
+						break;
 					case "D":
 						simpleDownload();
 						break;
@@ -561,9 +564,6 @@ class Peer {
 						if (!peerServer.ssocket.isClosed())
 							peerServer.ssocket.close();
 						running = false;
-						break;
-					case "ch":
-						checkActive();
 						break;
 					default:
 						break;

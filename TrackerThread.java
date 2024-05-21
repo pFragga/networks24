@@ -68,10 +68,8 @@ class TrackerThread implements Runnable {
 		String tokenID = information.tokenID;
 		Message response = new Message(MessageType.INFORM);
 		if (response.status = tracker.activePeers.containsKey(tokenID)) {
-			for (String filename: information.sharedFilesNames) {
-				tracker.updateAllFilenames(filename);
+			for (String filename: information.sharedFilesNames)
 				tracker.updateFilenamesToTokenIDs(filename, tokenID);
-			}
 		} else {
 			response.description = "Bad token ID.";
 		}
