@@ -12,9 +12,12 @@ import java.lang.Math;
 import java.lang.Thread;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.List;
@@ -505,10 +508,8 @@ class Peer {
 	}
 
 	List<File> partition(File f, int numPieces) {
-		if (!f.exists()) {
-			System.err.println("Could not find '" + f.getName() + "'.");
+		if (!fileOK(f))
 			return null;
-		}
 
 		if (f.isDirectory()) {
 			System.err.println("Input file cannot be a directory.");
@@ -561,6 +562,68 @@ class Peer {
 		}
 
 		return pieces;
+	}
+
+	boolean fileOK(File f) {
+		if (f == null) {
+			System.err.println("Provided file was null pointer.");
+			return false;
+		}
+
+		if (!f.exists()) {
+			System.err.println("Could not find '" + f.getName() + "'.");
+			return false;
+		}
+
+		return true;
+	}
+
+	File assemble(List<File> parts, String filename) {
+		if (parts == null) {
+			System.err.println("Provided parts list was null pointer.");
+			return null;
+		}
+
+		if (parts.isEmpty()) {
+			System.err.println("Provided parts list was empty.");
+			return null;
+		}
+
+		try {
+			File assembledFile = new File(sharedDir, filename);
+			BufferedOutputStream bos = new BufferedOutputStream(new
+					FileOutputStream(assembledFile));
+			for (File part: parts) {
+				byte[] bytes = Files.readAllBytes(part.toPath());
+				bos.write(bytes, 0, (int) part.length());
+			}
+			bos.close();
+			return assembledFile;
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	boolean cmpFiles(File f1, File f2) {
+		if (!fileOK(f1))
+			return false;
+		if (!fileOK(f2))
+			return false;
+
+		if (f1.isDirectory() || f2.isDirectory()) {
+			System.err.println("Input files must not be directories.");
+			return false;
+		}
+
+		try {
+			byte[] a = Files.readAllBytes(f1.toPath());
+			byte[] b = Files.readAllBytes(f2.toPath());
+			return Arrays.equals(a, b);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return false;
 	}
 
 	void updateSharedFiles() {
