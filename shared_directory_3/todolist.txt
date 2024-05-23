@@ -1,5 +1,0 @@
-* eggs
-* bacon
-* ham
-* spam
-* cheese

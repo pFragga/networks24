@@ -1,11 +1,4 @@
-cat.jpg
-gpl-3.0.txt
-license.txt
-lorem.txt
-meme.jpg
-quote1.txt
-quote2.txt
-quote3.txt
-quote4.txt
-todolist.txt
-zen.txt
+kernel-coding-style.txt
+rfc2131.txt
+rfc2617.txt
+rfc791.txt
