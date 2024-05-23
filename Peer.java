@@ -1,6 +1,8 @@
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
@@ -14,7 +16,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
 class Peer {
@@ -31,6 +35,7 @@ class Peer {
 	List<File> sharedFiles;
 	String sharedDir;
 	String lastRequestedFilename;
+	Map<String, List<File>> filenamesToPieces;
 
 	/* server tracker's and other peers' activity and download requests */
 	PeerServer peerServer;
@@ -44,7 +49,8 @@ class Peer {
 		this.trackerPort = trackerPort;
 		this.sharedFiles = new ArrayList<>();
 		this.sharedDir = sharedDir;
-		peerServer = new PeerServer(this);
+		this.filenamesToPieces = new ConcurrentHashMap<>();
+		this.peerServer = new PeerServer(this);
 	}
 
 	void getHelp() {
@@ -490,26 +496,92 @@ class Peer {
 		}
 	}
 
-	/*
-	 * Reading 'fileDownloadList.txt' is really unnecessary, since we could
-	 * just get the listing of sharedDir instead, but...
-	 *
-	 * May have to send another email to <pittaras@aueb.gr>
-	 */
+	String getBasename(String filename) {
+		String[] splits = filename.split("\\.txt"); /* TODO */
+		String basename = "";
+		for (int i = 0; i <= splits.length - 1; ++i)
+			basename += splits[i];
+		return basename;
+	}
+
+	List<File> partition(File f, int numPieces) {
+		if (!f.exists()) {
+			System.err.println("Could not find '" + f.getName() + "'.");
+			return null;
+		}
+
+		if (f.isDirectory()) {
+			System.err.println("Input file cannot be a directory.");
+			return null;
+		}
+
+		long flength = f.length();
+
+		if (flength > Integer.MAX_VALUE) {
+			System.err.println("Input file too large to split.");
+			return null;
+		}
+
+		String filename = f.getName();
+		String basename = getBasename(filename);
+		int bytesRead = 0;
+		List<File> pieces = new ArrayList<>();
+		try {
+			BufferedInputStream bis = new BufferedInputStream(new
+					FileInputStream(f));
+			for (int i = 1; i <= numPieces; ++i) {
+				int plength = (int) flength / numPieces;
+
+				/*
+				 * If the length of the file (in bytes) cannot be divided
+				 * evenly, make the last piece a bit bigger in order to make up
+				 * for the remainder.
+				 */
+				if (i == numPieces)
+					plength += (int) flength % numPieces;
+
+				/* read the file's bytes into a buffer */
+				byte[] buffer = new byte[plength];
+				bytesRead += bis.read(buffer, 0, plength);
+
+				/* write buffer into a new file with the apropriate suffix */
+				File piece = new File(sharedDir, basename + "-" + i + ".part");
+				BufferedOutputStream bos = new BufferedOutputStream(new
+						FileOutputStream(piece));
+				System.out.print("Creating piece '" + piece.getName() + "'... ");
+				bos.write(buffer, 0, plength);
+				System.out.println("OK.");
+				pieces.add(piece);
+
+				bos.close();
+			}
+			bis.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		return pieces;
+	}
+
 	void updateSharedFiles() {
-		try (
-			BufferedReader reader = new BufferedReader(new FileReader("fileDownloadList.txt"));
-			) {
-			System.out.print("Updating shared files (" + sharedDir + ")... ");
+		try {
+			BufferedReader reader = new BufferedReader(new
+					FileReader("fileDownloadList.txt"));
+			System.out.println(">>> Updating shared files (" + sharedDir + ") <<<");
 			String filename;
 			while ((filename = reader.readLine()) != null) {
 				File currFile = new File(sharedDir, filename);
-				if (currFile.exists() && !sharedFiles.contains(currFile))
-					sharedFiles.add(currFile);
+				if (!currFile.exists() || sharedFiles.contains(currFile))
+					continue;
+				List<File> pieces = partition(currFile, 10);
+				if (pieces == null)
+					continue;
+				sharedFiles.add(currFile);
+				filenamesToPieces.put(currFile.getName(), pieces);
 			}
-			System.out.println("OK.");
+			System.out.println(">>> Update finished <<<");
 		} catch (IOException e) {
-			System.err.println("Could not read fileDownloadList.txt");
+			e.printStackTrace();
 		}
 	}
 
@@ -579,5 +651,4 @@ class Peer {
 
 		stdin.close();
 	}
-
 }
