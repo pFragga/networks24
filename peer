@@ -1,11 +1,14 @@
 #!/bin/sh
 
-choose_shared_dir() {
-	ls | grep 'shared_directory' | shuf -n 1
-}
+# create all 10 shared directories, if they haven't already been created
+if [ ! -d shared_directory_10 ]; then
+	for i in $(seq 1 10); do
+		mkdir shared_directory_"$i"
+	done
+fi
 
 if [ -z "$3" ]; then
-	dir=$(choose_shared_dir)
+	dir="shared_directory_$(shuf -i 1-6 -n 1)"
 	java -cp bin PeerMain "${1:-localhost}" "${2:-9090}" "$dir"
 else
 	java -cp bin PeerMain "${1:-localhost}" "${2:-9090}" "$3"
