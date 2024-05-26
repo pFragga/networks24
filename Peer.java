@@ -387,6 +387,47 @@ class Peer {
 			System.out.println("No available files yet.");
 		}
 	}
+	/*List<ContactInfo> details() throws IOException, ClassNotFoundException {
+		if (!connected) {
+			System.out.println("You are already not connected.");
+			return null;
+		}
+
+		if (tokenID == null || tokenID.isEmpty()) {
+			System.out.println("You have not yet logged in.");
+			return null;
+		}
+
+		sendData(new Message(MessageType.DETAILS));
+
+		System.out.print("Enter the filename: ");
+		String filename = stdin.nextLine();
+		Message request = new Message(MessageType.DETAILS);
+		request.description = filename;
+		sendData(request);
+		Message response = (Message) input.readObject();
+
+		if (response.status) {
+			System.out.println("Contact information for peers having pieces of '" + filename + "':");
+			if (response.details.isEmpty()) {
+				System.out.println("No peers found with pieces of '" + filename + "'.");
+			} else {
+				for (ContactInfo info : response.details) {
+					System.out.println("Peer: " + info.username);
+					System.out.println("IP Address: " + info.getIP());
+					System.out.println("Port: " + info.port);
+					System.out.println("Download Count: " + info.countDownloads);
+					System.out.println("Failure Count: " + info.countFailures);
+					System.out.println("Number of Pieces: " + info.numPieces);
+					System.out.println("Seeder: " + (info.isSeeder ? "Yes" : "No"));
+					System.out.println();
+				}
+			}
+		} else {
+			System.out.println(response.description);
+		}
+		return response.details; /* null, when negative response */
+	
 
 	List<ContactInfo> details() throws IOException, ClassNotFoundException {
 		list();
