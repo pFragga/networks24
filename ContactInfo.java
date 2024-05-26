@@ -5,7 +5,7 @@ import java.net.InetAddress;
 class ContactInfo implements Serializable, Comparable<ContactInfo> {
 	private static final long serialVersionUID = 43L; // IGNORE
 
-	InetAddress ipAddr;
+	String ipAddr;
 	int countDownloads;
 	int countFailures;
 	int port;

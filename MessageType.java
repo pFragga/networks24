@@ -8,5 +8,6 @@ public enum MessageType {
 	ACTIVE,
 	NOTIFY,
 	DOWNLOAD,
+	SEEDER_INFORM,
 	GENERIC;
 }

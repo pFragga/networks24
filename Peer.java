@@ -10,6 +10,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.Math;
 import java.lang.Thread;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Files;
@@ -180,6 +181,39 @@ class Peer {
 		}
 	}
 
+	void seederInform() throws IOException, ClassNotFoundException {
+		if (!connected) {
+			System.out.println("You need to be connected first.");
+			return;
+		}
+
+		if (tokenID == null || tokenID.isEmpty()) {
+			System.out.println("You need to login first.");
+			return;
+		}
+
+		// Gather information about the currently running files
+		List<String> runningFiles = new ArrayList<>();
+		for (File f : sharedFiles) {
+			runningFiles.add(f.getName());
+		}
+
+		// Inform the tracker about the communication information
+		Message seederInfo = new Message(MessageType.SEEDER_INFORM);
+		seederInfo.tokenID = tokenID;
+		seederInfo.runningFiles = runningFiles;
+		seederInfo.peer.ipAddr = InetAddress.getLocalHost().getHostAddress(); // Get the local IP address and convert to string
+		seederInfo.peer.port = peerServer.listeningPort; // Get the port the peer server is listening on
+		sendData(seederInfo);
+
+		// Receive response from the tracker
+		Message response = (Message) input.readObject();
+		if (response.status) {
+			System.out.println("Successfully informed tracker about seeder capabilities.");
+		} else {
+			System.out.println("Failed to inform tracker about seeder capabilities. Reason: " + response.description);
+		}
+	}
 	void login() throws IOException, ClassNotFoundException {
 		if (!connected) {
 			System.out.println("You need to be connected first.");
@@ -205,6 +239,7 @@ class Peer {
 			tokenID = response.tokenID;
 			System.out.println("Login successful. TOKENID: " + tokenID);
 			inform();
+			seederInform();
 		} else {
 			System.out.println("Login failed. Reason: " + response.description);
 		}
@@ -629,7 +664,7 @@ class Peer {
 	void updateSharedFiles() {
 		try {
 			BufferedReader reader = new BufferedReader(new
-					FileReader("fileDownloadList.txt"));
+					FileReader("networks24/fileDownloadList.txt"));
 			System.out.println(">>> Updating shared files (" + sharedDir + ") <<<");
 			String filename;
 			while ((filename = reader.readLine()) != null) {
