@@ -1,13 +1,7 @@
-import java.io.EOFException;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 
 class TrackerThread implements Runnable {
 	ObjectInputStream input;
@@ -70,6 +64,27 @@ class TrackerThread implements Runnable {
 		if (response.status = tracker.activePeers.containsKey(tokenID)) {
 			for (String filename: information.sharedFilesNames)
 				tracker.updateFilenamesToTokenIDs(filename, tokenID);
+		} else {
+			response.description = "Bad token ID.";
+		}
+		sendData(response);
+	}
+
+	void seederInform() throws IOException, ClassNotFoundException {
+		Message seederInfo = (Message) input.readObject();
+		String tokenID = seederInfo.tokenID;
+		Message response = new Message(MessageType.SEEDER_INFORM);
+		if (response.status = tracker.activePeers.containsKey(tokenID)) {
+			for (Map.Entry<String, List<File>> entry : seederInfo.Pieces.entrySet()) {
+				String filename = entry.getKey(); // Get the filename
+				List<File> fileList = entry.getValue(); // Get the list of files
+
+				// Iterate over the list of files for the current filename
+				for (File file : fileList) {
+					// Your logic here to update filenames to tokenIDs
+					tracker.updateFilenamesToTokenIDs(filename, tokenID);
+				}
+			}
 		} else {
 			response.description = "Bad token ID.";
 		}
@@ -235,6 +250,9 @@ class TrackerThread implements Runnable {
 						break;
 					case INFORM:
 						inform();
+						break;
+					case SEEDER_INFORM:
+						seederInform();
 						break;
 					default:
 						break;

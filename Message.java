@@ -1,6 +1,8 @@
+import java.io.File;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 class Message implements Serializable {
 	private static final long serialVersionUID = 42L; // IGNORE
@@ -15,6 +17,7 @@ class Message implements Serializable {
 	int listeningPort;
 	ArrayList<String> sharedFilesNames;
 	ArrayList<ContactInfo> details;
+	Map<String, List<File>> Pieces;
 
 	/* the peer who successfully sent a file upon a download request */
 	ContactInfo peer;

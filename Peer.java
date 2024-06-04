@@ -17,13 +17,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Scanner;
 
 class Peer {
 	/* use this to read all input from the user */
@@ -192,18 +187,31 @@ class Peer {
 			return;
 		}
 
-		// Gather information about the currently running files
-		List<String> runningFiles = new ArrayList<>();
-		for (File f : sharedFiles) {
-			runningFiles.add(f.getName());
+		/* in case a new file has been added in the meantime... */
+		updateSharedFiles();
+
+		// Create a HashMap to store pieces
+		Map<String, List<File>> Pieces = new HashMap<>();
+
+		// Iterate through the entries of the filenamesToPieces map
+		for (Map.Entry<String, List<File>> entry : filenamesToPieces.entrySet()) {
+			String key = entry.getKey(); // Get the filename without extension
+			List<File> fileList = entry.getValue(); // Get the list of files
+
+			// Check if the filename exists as a key in the Pieces map
+			if (Pieces.containsKey(key)) {
+				// If the key exists, add the files to the corresponding list
+				Pieces.get(key).addAll(fileList);
+			} else {
+				// If the key does not exist, add the files to a new list and put it in the Pieces map
+				Pieces.put(key, new ArrayList<>(fileList));
+			}
 		}
 
 		// Inform the tracker about the communication information
 		Message seederInfo = new Message(MessageType.SEEDER_INFORM);
 		seederInfo.tokenID = tokenID;
-		seederInfo.runningFiles = runningFiles;
-		seederInfo.peer.ipAddr = InetAddress.getLocalHost().getHostAddress(); // Get the local IP address and convert to string
-		seederInfo.peer.port = peerServer.listeningPort; // Get the port the peer server is listening on
+		seederInfo.Pieces = Pieces; // Get the port the peer server is listening on
 		sendData(seederInfo);
 
 		// Receive response from the tracker
@@ -214,6 +222,8 @@ class Peer {
 			System.out.println("Failed to inform tracker about seeder capabilities. Reason: " + response.description);
 		}
 	}
+
+
 	void login() throws IOException, ClassNotFoundException {
 		if (!connected) {
 			System.out.println("You need to be connected first.");
@@ -705,7 +715,7 @@ class Peer {
 	void updateSharedFiles() {
 		try {
 			BufferedReader reader = new BufferedReader(new
-					FileReader("networks24/fileDownloadList.txt"));
+					FileReader("fileDownloadList.txt"));
 			System.out.println(">>> Updating shared files (" + sharedDir + ") <<<");
 			String filename;
 			while ((filename = reader.readLine()) != null) {
