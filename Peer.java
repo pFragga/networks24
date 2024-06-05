@@ -27,7 +27,7 @@ class Peer {
 	boolean connected;
 	boolean running;
 	boolean registered;
-	String tokenID; // this is the equivalent of having a 'loggedin' boolean
+	String tokenID; /* this is the equivalent of having a 'loggedin' boolean */
 	ObjectInputStream input;
 	ObjectOutputStream output;
 	Socket csocket;
@@ -578,7 +578,7 @@ class Peer {
 			return null;
 
 		if (f.isDirectory()) {
-			System.err.println("Input file cannot be a directory.");
+			System.err.println("Input file must not be directory.");
 			return null;
 		}
 
@@ -594,8 +594,7 @@ class Peer {
 		int bytesRead = 0;
 		List<File> pieces = new ArrayList<>();
 		try {
-			BufferedInputStream bis = new BufferedInputStream(new
-					FileInputStream(f));
+			BufferedInputStream bis = new BufferedInputStream(new FileInputStream(f));
 			for (int i = 1; i <= numPieces; ++i) {
 				int plength = (int) flength / numPieces;
 
@@ -613,9 +612,9 @@ class Peer {
 
 				/* write buffer into a new file with the apropriate suffix */
 				File piece = new File(sharedDir, basename + "-" + i + ".part");
-				BufferedOutputStream bos = new BufferedOutputStream(new
-						FileOutputStream(piece));
-				System.out.print("Creating piece '" + piece.getName() + "'... ");
+				// piece.deleteOnExit();
+				BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(piece));
+				System.out.print("Creating piece '" + piece + "'... ");
 				bos.write(buffer, 0, plength);
 				System.out.println("OK.");
 				pieces.add(piece);
@@ -626,7 +625,6 @@ class Peer {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
 		return pieces;
 	}
 
