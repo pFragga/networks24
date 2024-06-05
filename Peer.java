@@ -177,42 +177,22 @@ class Peer {
 	}
 
 	void seederInform() throws IOException, ClassNotFoundException {
-		if (!connected) {
-			System.out.println("You need to be connected first.");
-			return;
-		}
-
-		if (tokenID == null || tokenID.isEmpty()) {
-			System.out.println("You need to login first.");
-			return;
-		}
-
-		/* in case a new file has been added in the meantime... */
-		updateSharedFiles();
-
-		// Create a HashMap to store pieces
+		Message seederInfo = new Message(MessageType.SEEDER_INFORM);
+		seederInfo.tokenID = tokenID; // Assuming tokenID is a member variable of the peer class
 		Map<String, List<File>> Pieces = new HashMap<>();
 
-		// Iterate through the entries of the filenamesToPieces map
+		// Logic to populate the Pieces map with filenames and corresponding list of files
+		// You might need to adjust this based on your application's logic
 		for (Map.Entry<String, List<File>> entry : filenamesToPieces.entrySet()) {
 			String key = entry.getKey(); // Get the filename without extension
 			List<File> fileList = entry.getValue(); // Get the list of files
 
-			// Check if the filename exists as a key in the Pieces map
-			if (Pieces.containsKey(key)) {
-				// If the key exists, add the files to the corresponding list
-				Pieces.get(key).addAll(fileList);
-			} else {
-				// If the key does not exist, add the files to a new list and put it in the Pieces map
-				Pieces.put(key, new ArrayList<>(fileList));
-			}
+			// Add filename and corresponding list of files to Pieces map
+			Pieces.put(key, new ArrayList<>(fileList));
 		}
 
-		// Inform the tracker about the communication information
-		Message seederInfo = new Message(MessageType.SEEDER_INFORM);
-		seederInfo.tokenID = tokenID;
-		seederInfo.Pieces = Pieces; // Get the port the peer server is listening on
-		sendData(seederInfo);
+		seederInfo.Pieces = Pieces; // Set the Pieces map in the message
+		sendData(seederInfo); // Send the message to the tracker
 
 		// Receive response from the tracker
 		Message response = (Message) input.readObject();

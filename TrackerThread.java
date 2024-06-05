@@ -72,9 +72,10 @@ class TrackerThread implements Runnable {
 
 	void seederInform() throws IOException, ClassNotFoundException {
 		Message seederInfo = (Message) input.readObject();
-		String tokenID = seederInfo.tokenID;
+		String tokenID = seederInfo.tokenID; // Assuming tokenID is a member variable of the tracker class
 		Message response = new Message(MessageType.SEEDER_INFORM);
-		if (response.status = tracker.activePeers.containsKey(tokenID)) {
+
+		if (tracker.activePeers.containsKey(tokenID)) {
 			for (Map.Entry<String, List<File>> entry : seederInfo.Pieces.entrySet()) {
 				String filename = entry.getKey(); // Get the filename
 				List<File> fileList = entry.getValue(); // Get the list of files
@@ -85,10 +86,15 @@ class TrackerThread implements Runnable {
 					tracker.updateFilenamesToTokenIDs(filename, tokenID);
 				}
 			}
+			response.status = true; // Successfully processed seeder information
 		} else {
+			response.status = false; // Failed to process seeder information
 			response.description = "Bad token ID.";
 		}
-		sendData(response);
+		// Print the contents of the filenamesToTokenIDs map
+		System.out.println("Updated filenamesToTokenIDs = " + tracker.filenamesToTokenIDs);
+
+		sendData(response); // Send response back to the peer
 	}
 
 	void login() throws IOException, ClassNotFoundException {
@@ -120,6 +126,7 @@ class TrackerThread implements Runnable {
 		/* if peer could not login, no reason to inform */
 		if (response.status) {
 			inform();
+			seederInform();
 			tracker.postUpdateDataStructures();
 		}
 	}

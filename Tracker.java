@@ -61,6 +61,11 @@ class Tracker {
 		filenamesToTokenIDs.put(filename, tokenIDs);
 	}
 
+	public synchronized void updateFilenamePiecesToTokenIDs(String filename, String tokenID) {
+		Set<String> tokenIDs = filenamesToTokenIDs.computeIfAbsent(filename, k -> new HashSet<>());
+		tokenIDs.add(tokenID);
+	}
+
 	void serverCleanup() {
 		try {
 			if (ssocket != null && !ssocket.isClosed()) {
